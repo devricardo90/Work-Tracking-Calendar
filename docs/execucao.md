@@ -570,3 +570,91 @@ pnpm.cmd add @scalar/fastify-api-reference
 - rota interna
 - URL local completa (`http://localhost:3000/...`)
 - caminho do arquivo `page.tsx` correspondente
+
+---
+
+## Passo 25: Início da integração real entre web e backend
+**Data:** 17 de Março de 2026
+
+**Objetivo:**
+- sair das telas estáticas e começar a ligar o frontend à API Fastify real
+
+**Escopo desta etapa:**
+1. calendário consumindo entradas reais do mês
+2. formulário de add entry criando ou atualizando registro real por data
+
+**Alterações realizadas:**
+1. ✅ Criação de `apps/web/src/lib/api.ts`
+2. ✅ Criação de `apps/web/src/lib/entries.ts`
+3. ✅ Integração de `apps/web/src/app/calendar/page.tsx` com `GET /entries?month=YYYY-MM`
+4. ✅ Integração de `apps/web/src/app/entries/new/page.tsx` com:
+   - `GET /entries/:workDate`
+   - `POST /entries`
+   - `PUT /entries/:id`
+5. ✅ Navegação por data no calendário usando query string em `/entries/new?date=YYYY-MM-DD`
+
+**Comportamento implementado:**
+- o calendário mostra registros reais do mês e destaca dias com entrada
+- tocar no dia abre o formulário da data correspondente
+- se já existir registro para a data, o formulário entra em modo de edição
+- se não existir, o formulário cria um novo registro
+
+**Validação executada:**
+1. ✅ `pnpm.cmd lint`
+
+---
+
+## Passo 26: Integração de Day Details e Monthly Summary com a API real
+**Data:** 17 de Março de 2026
+
+**Objetivo:**
+- continuar a substituição de telas estáticas por telas alimentadas pelo backend real
+
+**Alterações realizadas:**
+1. ✅ Atualização de `apps/web/src/app/calendar/page.tsx` para abrir `day-details` quando a data já tiver entrada
+2. ✅ Integração de `apps/web/src/app/entries/day-details/page.tsx` com `GET /entries/:workDate`
+3. ✅ Integração de `apps/web/src/app/summary/page.tsx` com `GET /entries?month=YYYY-MM`
+
+**Comportamento implementado:**
+- se o dia no calendário já tiver entrada, a navegação vai para `/entries/day-details?date=YYYY-MM-DD`
+- a tela de detalhes busca a entrada real pela data
+- a tela de resumo calcula total de horas, dias trabalhados, média e lista mensal a partir da API
+
+**Observação sobre a documentação Scalar:**
+- as mudanças desta etapa são no frontend
+- elas não alteram o Scalar, porque o Scalar documenta apenas a API Fastify
+- o Scalar será atualizado automaticamente apenas quando novos endpoints backend forem criados ou alterados
+
+**Validação executada:**
+1. ✅ `pnpm.cmd lint`
+
+---
+
+## Passo 27: Integracao de History e Profile com a API real
+**Data:** 17 de Marco de 2026
+
+**Objetivo:**
+- concluir a ligacao das telas restantes do app com o backend real
+- separar o diario de execucao da logica funcional do produto
+
+**Alteracoes realizadas:**
+1. Criacao de `docs/logica.md` como documento canonico das regras do app
+2. Criacao de `apps/api/src/modules/profile/profile.service.ts`
+3. Criacao de `apps/api/src/modules/profile/profile.routes.ts`
+4. Registro das rotas de profile em `apps/api/src/app.ts`
+5. Criacao de `apps/web/src/lib/profile.ts`
+6. Integracao de `apps/web/src/app/history/page.tsx` com `GET /entries?month=YYYY-MM`
+7. Integracao de `apps/web/src/app/profile/page.tsx` com `GET /profile`
+
+**Comportamento implementado:**
+- `history` passa a listar registros reais do mes com busca textual e filtro local por location
+- `profile` passa a mostrar dados reais do usuario padrao do MVP
+- a logica vigente do app fica centralizada em `docs/logica.md`, enquanto `docs/execucao.md` continua sendo apenas o diario de implementacao
+
+**Observacao sobre o Scalar:**
+- como houve mudanca no backend com a adicao de `GET /profile`
+- esse endpoint passa a aparecer na documentacao em `http://localhost:3333/docs/api`
+
+**Validacao executada:**
+1. `pnpm.cmd typecheck` em `apps/api`
+2. `pnpm.cmd lint` em `apps/web`

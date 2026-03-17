@@ -1,6 +1,7 @@
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { ZodError } from "zod";
 
+import { AuthenticationError, requireAuthenticatedUser } from "../auth/auth-session.js";
 import {
   createEntry,
   deleteEntry,
@@ -36,8 +37,9 @@ export const entryRoutes: FastifyPluginAsync = async (app) => {
 
   app.get("/entries", async (request, reply) => {
     try {
+      const user = await requireAuthenticatedUser(request);
       const query = monthQuerySchema.parse(request.query);
-      const entries = await listEntriesByMonth(app.prisma, app.config, query.month);
+      const entries = await listEntriesByMonth(app.prisma, user.id, query.month);
 
       reply.send({ entries });
     } catch (error) {
@@ -47,8 +49,9 @@ export const entryRoutes: FastifyPluginAsync = async (app) => {
 
   app.get("/entries/:workDate", async (request, reply) => {
     try {
+      const user = await requireAuthenticatedUser(request);
       const params = dateParamSchema.parse(request.params);
-      const entry = await getEntryByDate(app.prisma, app.config, params.workDate);
+      const entry = await getEntryByDate(app.prisma, user.id, params.workDate);
 
       if (!entry) {
         reply.code(404).send({ message: "Entry not found" });
@@ -63,8 +66,9 @@ export const entryRoutes: FastifyPluginAsync = async (app) => {
 
   app.post("/entries", async (request, reply) => {
     try {
+      const user = await requireAuthenticatedUser(request);
       const payload = entryPayloadSchema.parse(request.body);
-      const entry = await createEntry(app.prisma, app.config, payload);
+      const entry = await createEntry(app.prisma, user.id, payload);
 
       reply.code(201).send({ entry });
     } catch (error) {
@@ -74,9 +78,10 @@ export const entryRoutes: FastifyPluginAsync = async (app) => {
 
   app.put("/entries/:id", async (request, reply) => {
     try {
+      const user = await requireAuthenticatedUser(request);
       const params = idParamSchema.parse(request.params);
       const payload = entryPayloadSchema.parse(request.body);
-      const entry = await updateEntry(app.prisma, app.config, params.id, payload);
+      const entry = await updateEntry(app.prisma, user.id, params.id, payload);
 
       reply.send({ entry });
     } catch (error) {
@@ -86,8 +91,9 @@ export const entryRoutes: FastifyPluginAsync = async (app) => {
 
   app.delete("/entries/:id", async (request, reply) => {
     try {
+      const user = await requireAuthenticatedUser(request);
       const params = idParamSchema.parse(request.params);
-      await deleteEntry(app.prisma, app.config, params.id);
+      await deleteEntry(app.prisma, user.id, params.id);
 
       reply.code(204).send();
     } catch (error) {
@@ -96,7 +102,7 @@ export const entryRoutes: FastifyPluginAsync = async (app) => {
   });
 };
 
-function handleRouteError(reply: { code: (statusCode: number) => any }, error: unknown) {
+function handleRouteError(reply: FastifyReply, error: unknown) {
   if (error instanceof ZodError) {
     reply.code(400).send({
       message: "Invalid request",
@@ -105,6 +111,11 @@ function handleRouteError(reply: { code: (statusCode: number) => any }, error: u
         message: issue.message,
       })),
     });
+    return;
+  }
+
+  if (error instanceof AuthenticationError) {
+    reply.code(401).send({ message: error.message });
     return;
   }
 

@@ -6,7 +6,9 @@ import apiReference from "@scalar/fastify-api-reference";
 
 import { getConfig } from "./config.js";
 import { createPrismaClient, type AppPrismaClient } from "./lib/prisma.js";
+import { authRoutes } from "./modules/auth/auth.routes.js";
 import { entryRoutes } from "./modules/entries/entry.routes.js";
+import { profileRoutes } from "./modules/profile/profile.routes.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -27,6 +29,7 @@ export async function buildApp() {
 
   await app.register(cors, {
     origin: config.CORS_ORIGIN,
+    credentials: true,
   });
 
   await app.register(jwt, {
@@ -61,6 +64,8 @@ export async function buildApp() {
   });
 
   await app.register(entryRoutes);
+  await app.register(profileRoutes);
+  await app.register(authRoutes);
 
   return app;
 }

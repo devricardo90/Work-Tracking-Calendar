@@ -1,7 +1,6 @@
 import { Prisma } from "@prisma/client";
 
 import { formatDayString, getMonthRange, parseDayString } from "../../lib/dates.js";
-import type { AppConfig } from "../../config.js";
 import type { AppPrismaClient } from "../../lib/prisma.js";
 import type { EntryPayload } from "./entry.schemas.js";
 
@@ -17,23 +16,6 @@ export type EntryResponse = {
 
 export class EntryConflictError extends Error {}
 export class EntryNotFoundError extends Error {}
-
-async function getDefaultUser(prisma: AppPrismaClient, config: AppConfig) {
-  return prisma.user.upsert({
-    where: {
-      email: config.DEFAULT_USER_EMAIL,
-    },
-    update: {
-      name: config.DEFAULT_USER_NAME,
-      language: config.DEFAULT_USER_LANGUAGE,
-    },
-    create: {
-      name: config.DEFAULT_USER_NAME,
-      email: config.DEFAULT_USER_EMAIL,
-      language: config.DEFAULT_USER_LANGUAGE,
-    },
-  });
-}
 
 function toEntryResponse(entry: {
   id: string;
@@ -55,13 +37,12 @@ function toEntryResponse(entry: {
   };
 }
 
-export async function listEntriesByMonth(prisma: AppPrismaClient, config: AppConfig, month: string) {
-  const user = await getDefaultUser(prisma, config);
+export async function listEntriesByMonth(prisma: AppPrismaClient, userId: string, month: string) {
   const range = getMonthRange(month);
 
   const entries = await prisma.workEntry.findMany({
     where: {
-      userId: user.id,
+      userId,
       workDate: {
         gte: range.start,
         lt: range.end,
@@ -75,14 +56,13 @@ export async function listEntriesByMonth(prisma: AppPrismaClient, config: AppCon
   return entries.map(toEntryResponse);
 }
 
-export async function getEntryByDate(prisma: AppPrismaClient, config: AppConfig, workDate: string) {
-  const user = await getDefaultUser(prisma, config);
+export async function getEntryByDate(prisma: AppPrismaClient, userId: string, workDate: string) {
   const parsedDate = parseDayString(workDate);
 
   const entry = await prisma.workEntry.findUnique({
     where: {
       userId_workDate: {
-        userId: user.id,
+        userId,
         workDate: parsedDate,
       },
     },
@@ -91,13 +71,11 @@ export async function getEntryByDate(prisma: AppPrismaClient, config: AppConfig,
   return entry ? toEntryResponse(entry) : null;
 }
 
-export async function createEntry(prisma: AppPrismaClient, config: AppConfig, payload: EntryPayload) {
-  const user = await getDefaultUser(prisma, config);
-
+export async function createEntry(prisma: AppPrismaClient, userId: string, payload: EntryPayload) {
   try {
     const entry = await prisma.workEntry.create({
       data: {
-        userId: user.id,
+        userId,
         workDate: parseDayString(payload.workDate),
         hoursWorked: new Prisma.Decimal(payload.hoursWorked),
         location: payload.location,
@@ -117,15 +95,14 @@ export async function createEntry(prisma: AppPrismaClient, config: AppConfig, pa
 
 export async function updateEntry(
   prisma: AppPrismaClient,
-  config: AppConfig,
+  userId: string,
   id: string,
   payload: EntryPayload,
 ) {
-  const user = await getDefaultUser(prisma, config);
   const existingEntry = await prisma.workEntry.findFirst({
     where: {
       id,
-      userId: user.id,
+      userId,
     },
   });
 
@@ -156,12 +133,11 @@ export async function updateEntry(
   }
 }
 
-export async function deleteEntry(prisma: AppPrismaClient, config: AppConfig, id: string) {
-  const user = await getDefaultUser(prisma, config);
+export async function deleteEntry(prisma: AppPrismaClient, userId: string, id: string) {
   const existingEntry = await prisma.workEntry.findFirst({
     where: {
       id,
-      userId: user.id,
+      userId,
     },
   });
 

@@ -29,6 +29,7 @@
 
 ## Prisma e banco
 
+- Antes de executar etapas relacionadas a Prisma, banco de dados ou auth, ler `docs/seguranca.md`.
 - Em Prisma 7 com PostgreSQL, lembrar que o client precisa de adapter em runtime.
 - Regenerar o Prisma Client sempre que o schema mudar.
 - Registrar migrations, ajustes de runtime e problemas de compatibilidade no arquivo de execucao correspondente.

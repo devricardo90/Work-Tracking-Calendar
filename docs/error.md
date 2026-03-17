@@ -283,3 +283,21 @@ fatal: detected dubious ownership in repository
 **Solução adotada no projeto:**
 - adicionar `safe.directory` para `C:/Users/ricardodev/Desktop/calendar-project`
 - repetir o push apenas uma vez após essa correção
+
+---
+
+## 17 de Marco de 2026 - Better Auth e Prisma no ambiente atual
+
+### Problemas encontrados
+- `pnpm.cmd add ...` falhou inicialmente com `EPERM` no sandbox ao escrever arquivos temporarios do workspace.
+- `pnpm.cmd exec prisma generate` falhou inicialmente com `EPERM` ao criar `.prisma` em `node_modules`.
+- `pnpm.cmd exec better-auth generate` nao encontrou a config automaticamente; foi necessario usar `--config auth.js`.
+- `pnpm.cmd exec prisma migrate dev --name auth_init` nao pode ser usado neste ambiente porque o comando e interativo e o terminal atual e nao-interativo.
+- O schema gerado pelo Better Auth adicionou `@@map("user")` em `User`, o que faria o Prisma tentar dropar a tabela `User` existente.
+
+### Decisoes aplicadas
+- Escalar a instalacao e o `prisma generate` quando o sandbox bloqueou subprocessos/escrita.
+- Usar `auth.js` como arquivo de configuracao do Better Auth para o CLI.
+- Executar `pnpm.cmd exec better-auth generate --config auth.js --yes`.
+- Remover `@@map("user")` do model `User` antes de sincronizar o banco.
+- Usar `pnpm.cmd exec prisma db push --accept-data-loss` em vez de `migrate dev` para concluir a fase de auth neste ambiente.

@@ -2,15 +2,45 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Eye, EyeOff, SquareTerminal } from "lucide-react";
+import { Eye, EyeOff, LoaderCircle, SquareTerminal } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { getGoogleSignInUrl, signInWithEmail, signUpWithEmail } from "@/lib/auth";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setFeedback(null);
+
+    try {
+      if (isSignUp) {
+        await signUpWithEmail(name, email, password);
+      } else {
+        await signInWithEmail(email, password);
+      }
+
+      router.push("/calendar");
+      router.refresh();
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Authentication failed");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f7f7f5_0%,#f1eee8_48%,#ebe5db_100%)] text-stone-900">
@@ -34,7 +64,22 @@ export default function LoginPage() {
           </div>
 
           <div className="rounded-[2rem] border border-white/70 bg-white/88 px-5 py-6 shadow-[0_28px_90px_-42px_rgba(60,40,20,0.38)] backdrop-blur">
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              {isSignUp ? (
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="px-1 text-sm font-medium text-stone-700">
+                    Name
+                  </Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    placeholder="Alex Worker"
+                    className="h-12 rounded-2xl border-stone-200 bg-white px-4 text-sm"
+                  />
+                </div>
+              ) : null}
+
               <div className="space-y-2">
                 <Label htmlFor="email" className="px-1 text-sm font-medium text-stone-700">
                   Email
@@ -42,6 +87,8 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   placeholder="alex@company.com"
                   className="h-12 rounded-2xl border-stone-200 bg-white px-4 text-sm"
                 />
@@ -64,6 +111,8 @@ export default function LoginPage() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
                     placeholder="********"
                     className="h-12 rounded-2xl border-stone-200 bg-white px-4 pr-12 text-sm"
                   />
@@ -78,8 +127,14 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button className="mt-3 h-12 w-full rounded-2xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.55)] hover:bg-stone-800">
-                Sign In
+              {feedback ? <p className="text-sm text-red-600">{feedback}</p> : null}
+
+              <Button
+                className="mt-3 h-12 w-full rounded-2xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.55)] hover:bg-stone-800"
+                disabled={isSubmitting || !email.trim() || !password.trim() || (isSignUp && !name.trim())}
+              >
+                {isSubmitting ? <LoaderCircle className="size-4 animate-spin" /> : null}
+                {isSignUp ? "Create Account" : "Sign In"}
               </Button>
             </form>
 
@@ -92,20 +147,30 @@ export default function LoginPage() {
             </div>
 
             <Button
+              asChild
               variant="outline"
               className="h-12 w-full rounded-2xl border-stone-200 bg-white text-sm font-medium text-stone-700 hover:bg-stone-50"
             >
-              <span className="flex size-5 items-center justify-center rounded-full bg-[conic-gradient(from_180deg_at_50%_50%,#4285F4_0deg,#34A853_130deg,#FBBC05_230deg,#EA4335_320deg,#4285F4_360deg)] text-[10px] font-bold text-white">
-                G
-              </span>
-              Continue with Google
+              <a href={getGoogleSignInUrl()}>
+                <span className="flex size-5 items-center justify-center rounded-full bg-[conic-gradient(from_180deg_at_50%_50%,#4285F4_0deg,#34A853_130deg,#FBBC05_230deg,#EA4335_320deg,#4285F4_360deg)] text-[10px] font-bold text-white">
+                  G
+                </span>
+                Continue with Google
+              </a>
             </Button>
 
             <p className="mt-8 text-center text-sm leading-6 text-stone-500">
-              Don&apos;t have an account?
+              {isSignUp ? "Already have an account?" : "Don't have an account?"}
               {" "}
-              <button type="button" className="font-semibold text-stone-950 hover:underline">
-                Sign Up
+              <button
+                type="button"
+                className="font-semibold text-stone-950 hover:underline"
+                onClick={() => {
+                  setIsSignUp((current) => !current);
+                  setFeedback(null);
+                }}
+              >
+                {isSignUp ? "Sign In" : "Sign Up"}
               </button>
             </p>
           </div>

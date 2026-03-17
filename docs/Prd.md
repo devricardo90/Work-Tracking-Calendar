@@ -1,26 +1,26 @@
 # Product Requirements Document (PRD)
 
-## 1. Visão do Produto
-O **Worker Hours Tracker** é uma aplicação web responsiva para registrar horas trabalhadas, locais e observações. Foco em simplicidade (agendamento em < 30s) e utilidade (relatórios PDF profissionais).
+## 1. Visao do Produto
+O **Worker Hours Tracker** e uma aplicacao web responsiva para registrar horas trabalhadas, locais e observacoes. O foco e simplicidade no lancamento e utilidade no acompanhamento mensal.
 
 ## 2. Persona
-Trabalhadores autônomos, técnicos de campo e prestadores de serviço que precisam consolidar horas de múltiplos locais para faturamento ou controle.
+Trabalhadores autonomos, tecnicos de campo e prestadores de servico que precisam consolidar horas de multiplos locais para faturamento ou controle.
 
 ## 3. Escopo do MVP
-- Calendário mensal com indicadores visuais.
-- CRUD de lançamentos diários (Hours Worked, Location, Notes).
-- Resumo mensal (Totais e Médias).
-- Histórico pesquisável por data e local.
-- Perfil de usuário com locais salvos.
-- Exportação de relatório em PDF e compartilhamento por e-mail.
-- Documentação da API com Swagger.
+- Calendario mensal com indicadores visuais.
+- CRUD de lancamentos diarios (Hours Worked, Location, Notes).
+- Resumo mensal (Totais e Medias).
+- Historico pesquisavel por data e local.
+- Perfil de usuario com locais salvos.
+- Exportacao de relatorio em PDF e compartilhamento por e-mail.
+- Documentacao da API com Swagger/Scalar.
 
 ## 4. Requisitos Funcionais (Highlights)
-- **RF01:** Calendário com navegação e marcação de registros.
+- **RF01:** Calendario com navegacao e marcacao de registros.
 - **RF02:** Registro de data, horas, local e notas.
-- **RF04:** Cálculo automático de total mensal e média diária.
-- **RF06:** Geração de PDF com nome do trabalhador, período e tabela de entradas.
-- **RF08:** Opção de envio de relatório por e-mail.
+- **RF04:** Calculo automatico de total mensal e media diaria.
+- **RF06:** Geracao de PDF com nome do trabalhador, periodo e tabela de entradas.
+- **RF08:** Opcao de envio de relatorio por e-mail.
 
 ## 5. Modelo de Dados (Prisma Schema)
 ```prisma
@@ -61,11 +61,19 @@ model WorkEntry {
 }
 ```
 
-**Regra atual do MVP:** apenas um registro por usuário em cada dia. Suporte formal a múltiplos locais no mesmo dia fica para evolução futura do domínio.
+**Regra atual do MVP:** apenas um registro por usuario em cada dia. Suporte formal a multiplos locais no mesmo dia fica para evolucao futura do dominio.
 
-## 6. Fases de Execução
+## 6. Fases de Execucao
 1. **Foundation:** Monorepo, Turborepo, Docker/Postgres, Prisma Init, Fastify/Next.js scaffolds.
-2. **Core Domain:** Migrations, API de Entradas, Tela de Calendário e Formulários.
-3. **Value MVP:** Resumo mensal, Histórico e Perfil.
-4. **Reports:** Geração e Preview de PDF.
-5. **Hardening:** Auth, Validação (Zod), Logs e Deploy.
+2. **Core Domain:** Migrations, API de Entradas, Tela de Calendario e Formularios.
+3. **Value MVP:** Resumo mensal, Historico e Perfil.
+4. **Reports:** Geracao e Preview de PDF.
+5. **Hardening:** Auth, validacao com Zod, logs e deploy.
+
+## 7. Planejamento Tatico Atual
+- Auth e ownership por sessao ja estao em andamento na API e no frontend.
+- A validacao com `Zod` no frontend deve ser adicionada no momento de endurecer os formularios com `react-hook-form`, para alinhar UI e API sem retrabalho precoce.
+- Prioridade sugerida para essa etapa:
+  - proteger rotas autenticadas no frontend
+  - estabilizar sessao e fluxo real do usuario
+  - depois adicionar `Zod` nos formularios de login, profile e entries
