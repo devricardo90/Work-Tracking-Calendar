@@ -1,0 +1,17 @@
+node_modules/
+.turbo/
+
+apps/*/node_modules/
+apps/*/.next/
+apps/*/dist/
+apps/*/*.log
+apps/*/server.log
+apps/*/server.err.log
+
+.env
+.env.*
+!.env.example
+
+coverage/
+.DS_Store
+Thumbs.db
