@@ -381,3 +381,192 @@ pnpm.cmd add @scalar/fastify-api-reference
 **Próximo passo:**
 - criar um commit curto com a atualização desta documentação
 - repetir o push para `origin/main`
+
+---
+
+## Passo 18: Importação de referência do Stitch
+**Data:** 17 de Março de 2026
+
+**Objetivo:**
+- obter a imagem e o código da tela fornecida pelo Stitch para usar como referência de implementação no frontend
+
+**Fonte recebida:**
+- arquivo local `C:\Users\ricardodev\Downloads\stitch_add_work_entry.zip`
+
+**Conteúdo identificado no ZIP:**
+1. `code.html`
+2. `screen.png`
+
+**Próximo passo:**
+- extrair os arquivos para dentro do projeto em uma pasta de referência visual
+
+---
+
+## Passo 19: Implementação da rota de login baseada no Stitch
+**Data:** 17 de Março de 2026
+
+**Objetivo:**
+- validar o fluxo de adaptação de uma tela do Stitch para a aplicação Next.js real
+
+**Fonte usada:**
+- `docs/stitch/add-work-entry/code.html`
+- `docs/stitch/add-work-entry/screen.png`
+
+**Alterações realizadas:**
+1. ✅ Criação da rota `apps/web/src/app/login/page.tsx`
+2. ✅ Adaptação do layout visual do Stitch para componentes `shadcn/ui`
+3. ✅ Inclusão do atalho para `/login` na home em `apps/web/src/app/page.tsx`
+4. ✅ Implementação do toggle visual de senha
+
+**Validação executada:**
+1. ✅ `pnpm.cmd lint`
+
+**Resultado:**
+- a aplicação já tem uma rota real de login para teste visual
+- essa rota passa a servir como referência para adaptar as próximas telas recebidas do Stitch
+
+---
+
+## Passo 20: Ajuste da tela de login para mobile-first
+**Data:** 17 de Março de 2026
+
+**Contexto:**
+- após revisão do produto, a direção correta foi tratá-lo como web app responsivo com base mobile-first
+
+**Alteração realizada:**
+1. ✅ refatoração de `apps/web/src/app/login/page.tsx` para um layout prioritariamente mobile
+2. ✅ remoção da composição inicial mais centrada em desktop
+3. ✅ manutenção da referência visual do Stitch, mas com estrutura mais próxima de app de celular
+
+**Validação executada:**
+1. ✅ `pnpm.cmd lint`
+
+**Resultado:**
+- a rota `/login` agora está alinhada com a estratégia mobile-first do projeto
+
+---
+
+## Passo 21: Implementação de mais duas telas baseadas no Stitch
+**Data:** 17 de Março de 2026
+
+**Fontes recebidas:**
+- `C:\Users\ricardodev\Downloads\stitch_add_work_entry (1).zip`
+- `C:\Users\ricardodev\Downloads\stitch_add_work_entry (2).zip`
+
+**Referências extraídas para o projeto:**
+- `docs/stitch/add-work-entry-1/`
+- `docs/stitch/add-work-entry-2/`
+
+**Mapeamento das telas:**
+1. `add-work-entry-1` → tela `Add Work Entry`
+2. `add-work-entry-2` → tela `Calendar`
+
+**Alterações realizadas:**
+1. ✅ Criação da rota `apps/web/src/app/entries/new/page.tsx`
+2. ✅ Criação da rota `apps/web/src/app/calendar/page.tsx`
+3. ✅ Criação do componente compartilhado `apps/web/src/components/mobile-nav.tsx`
+4. ✅ Atualização da home com atalhos para `/calendar` e `/entries/new`
+
+**Direção aplicada:**
+- adaptação mobile-first
+- visual inspirado nas telas do Stitch
+- implementação com Next.js + `shadcn/ui`, sem usar o HTML bruto exportado
+
+**Validação executada:**
+1. ✅ `pnpm.cmd lint`
+
+**Resultado:**
+- o projeto agora tem três rotas de teste inspiradas no Stitch:
+  - `/login`
+  - `/calendar`
+  - `/entries/new`
+
+---
+
+## Passo 22: Implementação de Day Details e Monthly Summary a partir do Stitch
+**Data:** 17 de Março de 2026
+
+**Fontes recebidas:**
+- `C:\Users\ricardodev\Downloads\stitch_add_work_entry (3).zip`
+- `C:\Users\ricardodev\Downloads\stitch_add_work_entry (4).zip`
+
+**Referências extraídas para o projeto:**
+- `docs/stitch/add-work-entry-3/`
+- `docs/stitch/add-work-entry-4/`
+
+**Mapeamento das telas:**
+1. `add-work-entry-3` → tela `Day Details`
+2. `add-work-entry-4` → tela `Monthly Summary`
+
+**Alterações realizadas:**
+1. ✅ Criação da rota `apps/web/src/app/entries/day-details/page.tsx`
+2. ✅ Criação da rota `apps/web/src/app/summary/page.tsx`
+3. ✅ Atualização da rota `apps/web/src/app/calendar/page.tsx` com links para as novas telas
+
+**Direção aplicada:**
+- continuação da estratégia mobile-first
+- adaptação visual inspirada no Stitch
+- implementação com componentes reais do projeto
+
+**Validação executada:**
+1. ✅ `pnpm.cmd lint`
+
+**Resultado:**
+- o projeto agora tem cinco rotas de teste inspiradas no Stitch:
+  - `/login`
+  - `/calendar`
+  - `/entries/new`
+  - `/entries/day-details`
+  - `/summary`
+
+---
+
+## Passo 23: Fechamento do conjunto completo de 7 telas do app
+**Data:** 17 de Março de 2026
+
+**Fontes recebidas:**
+- `C:\Users\ricardodev\Downloads\stitch_add_work_entry (5).zip`
+- `C:\Users\ricardodev\Downloads\stitch_add_work_entry (6).zip`
+
+**Referências extraídas para o projeto:**
+- `docs/stitch/add-work-entry-5/`
+- `docs/stitch/add-work-entry-6/`
+
+**Mapeamento das telas:**
+1. `add-work-entry-5` → tela `Profile`
+2. `add-work-entry-6` → tela `History / Search Records`
+
+**Alterações realizadas:**
+1. ✅ Criação da rota `apps/web/src/app/profile/page.tsx`
+2. ✅ Criação da rota `apps/web/src/app/history/page.tsx`
+3. ✅ Atualização da home com atalhos para todas as telas principais
+
+**Validação executada:**
+1. ✅ `pnpm.cmd lint`
+
+**Resultado final:**
+- o app agora tem as 7 telas principais adaptadas a partir das referências Stitch:
+  - `/login`
+  - `/calendar`
+  - `/entries/new`
+  - `/entries/day-details`
+  - `/summary`
+  - `/history`
+  - `/profile`
+
+---
+
+## Passo 24: Criação do inventário de telas
+**Data:** 17 de Março de 2026
+
+**Objetivo:**
+- documentar em um único arquivo todas as rotas disponíveis para teste local
+
+**Alteração realizada:**
+1. ✅ Criação de `docs/telas.md`
+
+**Conteúdo incluído:**
+- nome de cada tela
+- rota interna
+- URL local completa (`http://localhost:3000/...`)
+- caminho do arquivo `page.tsx` correspondente

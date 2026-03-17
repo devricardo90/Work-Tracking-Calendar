@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#1d283a",
+              "background-light": "#f6f7f7",
+              "background-dark": "#16181c",
+            },
+            fontFamily: {
+              "display": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<!-- Header Navigation -->
+<header class="flex items-center justify-between px-4 pt-6 pb-2 sticky top-0 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md z-10">
+<button class="flex items-center justify-center size-10 rounded-full hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-primary dark:text-slate-100">arrow_back</span>
+</button>
+<h2 class="text-lg font-semibold tracking-tight">Day Details</h2>
+<div class="size-10"></div> <!-- Spacer for centering -->
+</header>
+<main class="flex-1 px-4 overflow-y-auto pb-24">
+<!-- Date Header -->
+<div class="py-6">
+<h1 class="text-4xl font-bold tracking-tight text-primary dark:text-slate-100">Monday</h1>
+<p class="text-xl text-slate-500 dark:text-slate-400 font-medium">October 23, 2023</p>
+</div>
+<!-- Main Summary Card -->
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 p-6 mb-6">
+<div class="flex items-center justify-between mb-6">
+<div>
+<p class="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Time</p>
+<h3 class="text-3xl font-bold text-primary dark:text-slate-100">8.5 Hours</h3>
+</div>
+<div class="bg-primary/10 dark:bg-primary/30 p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary dark:text-slate-300 text-3xl">schedule</span>
+</div>
+</div>
+<div class="space-y-6">
+<!-- Location Info -->
+<div class="flex gap-4">
+<div class="mt-1">
+<span class="material-symbols-outlined text-slate-400">location_on</span>
+</div>
+<div>
+<p class="font-semibold text-slate-900 dark:text-slate-100 leading-none mb-1">Primary Location</p>
+<p class="text-slate-600 dark:text-slate-400">Corporate HQ, North Wing</p>
+</div>
+</div>
+<!-- Multi-Location/Notes -->
+<div class="flex gap-4 border-t border-slate-100 dark:border-slate-800 pt-6">
+<div class="mt-1">
+<span class="material-symbols-outlined text-slate-400">description</span>
+</div>
+<div>
+<p class="font-semibold text-slate-900 dark:text-slate-100 leading-none mb-2">Work Breakdown</p>
+<div class="space-y-3">
+<div class="bg-background-light dark:bg-background-dark p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+<p class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
+                                    Morning session spent at <span class="font-medium text-primary dark:text-slate-100">Site A</span> for foundation checks and safety audit.
+                                </p>
+</div>
+<div class="bg-background-light dark:bg-background-dark p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+<p class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
+                                    Afternoon relocated to <span class="font-medium text-primary dark:text-slate-100">Site B</span> for electrical final inspections and sign-offs.
+                                </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Map Preview -->
+<div class="rounded-xl overflow-hidden mb-8 shadow-sm border border-slate-200 dark:border-slate-800">
+<div class="relative h-40 w-full bg-cover bg-center" data-alt="Minimalist map route between two urban locations" data-location="New York City" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBW932OrHfN3u8MqtT6OTKpu3O2jhsqsBgtkRT_W0zEQbQjduRIQfG5p9clieHd6v9tT8YDhk38hwQBKiT4j4nci6c7A5yeMNlgl74EDlh6ARtYtAqB2K1puHxyus_Vm5AyiNRbx5p5Q1lXF58S_4NbCbd72gvVKp4QsOQjLfxhtY6NXW17CGWCsh_VQkwyMBaSb3i4DnE0hUrPNoXPvtGT1mWath8ASHnry_CTGZdigYsqYnNuLIKE-KxSEcI6wgheAPZ7xKVqIQ");'>
+<div class="absolute inset-0 bg-primary/10"></div>
+<div class="absolute bottom-4 right-4">
+<button class="bg-white dark:bg-slate-900 px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm font-semibold text-primary dark:text-slate-100 border border-slate-200 dark:border-slate-700">
+<span class="material-symbols-outlined text-sm">map</span>
+                        View Map
+                    </button>
+</div>
+</div>
+</div>
+<!-- Action Section -->
+<div class="space-y-4 px-2">
+<button class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-2 border-primary text-primary font-bold hover:bg-primary/5 transition-colors dark:border-slate-700 dark:text-slate-100">
+<span class="material-symbols-outlined">edit</span>
+                Edit Entry
+            </button>
+<button class="w-full py-3 text-red-500 font-medium hover:text-red-600 transition-colors">
+                Delete Entry
+            </button>
+</div>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md pb-6 pt-2 px-6">
+<div class="flex justify-between items-center max-w-md mx-auto">
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary dark:text-slate-100 active-nav" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="text-[10px] font-bold">Calendar</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<span class="text-[10px] font-medium">Reports</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-medium">Settings</span>
+</a>
+</div>
+</nav>
+</body></html>

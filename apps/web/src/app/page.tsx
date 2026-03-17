@@ -43,6 +43,69 @@ export default function Home() {
               >
                 <Link href="#status">Ver status atual</Link>
               </Button>
+
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-12 rounded-full border-stone-300 bg-white/70 px-6 text-stone-900 hover:bg-stone-100"
+              >
+                <Link href="/login">Testar tela de login</Link>
+              </Button>
+
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-12 rounded-full border-stone-300 bg-white/70 px-6 text-stone-900 hover:bg-stone-100"
+              >
+                <Link href="/calendar">Testar tela de calendario</Link>
+              </Button>
+
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-12 rounded-full border-stone-300 bg-white/70 px-6 text-stone-900 hover:bg-stone-100"
+              >
+                <Link href="/entries/new">Testar tela de add entry</Link>
+              </Button>
+
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-12 rounded-full border-stone-300 bg-white/70 px-6 text-stone-900 hover:bg-stone-100"
+              >
+                <Link href="/entries/day-details">Testar day details</Link>
+              </Button>
+
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-12 rounded-full border-stone-300 bg-white/70 px-6 text-stone-900 hover:bg-stone-100"
+              >
+                <Link href="/summary">Testar summary</Link>
+              </Button>
+
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-12 rounded-full border-stone-300 bg-white/70 px-6 text-stone-900 hover:bg-stone-100"
+              >
+                <Link href="/history">Testar history</Link>
+              </Button>
+
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-12 rounded-full border-stone-300 bg-white/70 px-6 text-stone-900 hover:bg-stone-100"
+              >
+                <Link href="/profile">Testar profile</Link>
+              </Button>
             </div>
           </div>
 

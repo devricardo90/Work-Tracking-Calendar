@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1d283a",
+                        "background-light": "#f6f7f7",
+                        "background-dark": "#16181c",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="max-w-2xl mx-auto min-h-screen flex flex-col">
+<!-- Header -->
+<header class="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-primary/10 px-4 py-4 flex items-center justify-between">
+<button class="p-2 hover:bg-primary/10 rounded-full transition-colors">
+<span class="material-symbols-outlined block">close</span>
+</button>
+<h1 class="text-lg font-bold tracking-tight">Add Work Entry</h1>
+<div class="w-10"></div> <!-- Spacer for centering -->
+</header>
+<main class="flex-1 p-4 lg:p-6 space-y-8">
+<!-- Date Picker Section -->
+<section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary/5 p-4">
+<div class="flex items-center justify-between mb-4">
+<button class="p-2 hover:bg-primary/5 rounded-full">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<h2 class="font-semibold text-primary dark:text-slate-100">October 2023</h2>
+<button class="p-2 hover:bg-primary/5 rounded-full">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<div class="grid grid-cols-7 text-center mb-2">
+<span class="text-xs font-bold text-slate-400 uppercase">S</span>
+<span class="text-xs font-bold text-slate-400 uppercase">M</span>
+<span class="text-xs font-bold text-slate-400 uppercase">T</span>
+<span class="text-xs font-bold text-slate-400 uppercase">W</span>
+<span class="text-xs font-bold text-slate-400 uppercase">T</span>
+<span class="text-xs font-bold text-slate-400 uppercase">F</span>
+<span class="text-xs font-bold text-slate-400 uppercase">S</span>
+</div>
+<div class="grid grid-cols-7 gap-1">
+<!-- Placeholder days for grid alignment -->
+<div class="h-10"></div><div class="h-10"></div><div class="h-10"></div>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">1</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">2</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">3</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">4</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full bg-primary text-white font-bold">5</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">6</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">7</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">8</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">9</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">10</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">11</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">12</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">13</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">14</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">15</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">16</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">17</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">18</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">19</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">20</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">21</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">22</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">23</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">24</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">25</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">26</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">27</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">28</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">29</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">30</button>
+<button class="h-10 w-full flex items-center justify-center text-sm rounded-full hover:bg-primary/5">31</button>
+</div>
+</section>
+<!-- Form Fields -->
+<div class="space-y-6">
+<!-- Hours Worked -->
+<div class="space-y-3">
+<label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Hours Worked</label>
+<div class="flex items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-primary/10 shadow-sm">
+<button class="size-10 flex items-center justify-center border border-primary/20 rounded-full hover:bg-primary/5">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<div class="flex-1 text-center">
+<span class="text-3xl font-bold text-primary dark:text-slate-100">8.0</span>
+<span class="text-slate-400 ml-1">hrs</span>
+</div>
+<button class="size-10 flex items-center justify-center border border-primary/20 rounded-full hover:bg-primary/5">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<div class="relative pt-2">
+<input class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary" max="24" min="0" step="0.5" type="range" value="8"/>
+</div>
+</div>
+<!-- Location -->
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Location</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">location_on</span>
+<input class="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-primary/10 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none" placeholder="Enter site address" type="text"/>
+</div>
+</div>
+<!-- Notes -->
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Notes</label>
+<textarea class="w-full p-4 bg-white dark:bg-slate-900 border border-primary/10 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none resize-none" placeholder="e.g., Half day at Site A, half at Site B" rows="4"></textarea>
+</div>
+</div>
+</main>
+<!-- Footer Actions -->
+<footer class="p-4 lg:p-6 bg-background-light dark:bg-background-dark border-t border-primary/5 flex flex-col gap-3">
+<button class="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:opacity-90 active:scale-[0.98] transition-all">
+                Save Entry
+            </button>
+<button class="w-full py-4 text-slate-600 dark:text-slate-400 font-semibold rounded-xl hover:bg-primary/5 transition-colors">
+                Cancel
+            </button>
+</footer>
+</div>
+</body></html>
