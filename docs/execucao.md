@@ -343,3 +343,41 @@ pnpm.cmd add @scalar/fastify-api-reference
 - artefatos de build (`.next`, `dist`)
 - logs locais
 - arquivos de ambiente
+
+---
+
+## Passo 16: Inicialização do Git e commit inicial
+**Data:** 17 de Março de 2026
+
+**Objetivo:**
+- conectar o projeto ao repositório GitHub informado pelo usuário
+- criar o primeiro commit do monorepo
+
+**Ações executadas:**
+1. ✅ `git init`
+2. ✅ branch principal definida como `main`
+3. ✅ remoto `origin` configurado para `https://github.com/devricardo90/Work-Tracking-Calendar.git`
+4. ✅ remoção do `.git` interno que existia em `apps/web`
+5. ✅ correção do índice Git para versionar `apps/web` como pasta normal do monorepo
+6. ✅ commit criado com a mensagem:
+   - `feat: bootstrap worker hours tracker monorepo`
+
+**Observação:**
+- o scaffold inicial do Next criou um repositório Git próprio em `apps/web`, o que precisou ser removido para o monorepo funcionar corretamente sob um único repositório na raiz
+
+---
+
+## Passo 17: Preparação do push para o GitHub
+**Data:** 17 de Março de 2026
+
+**Objetivo:**
+- publicar o commit inicial no repositório remoto do GitHub
+
+**Ações executadas:**
+1. ✅ tentativa inicial de `git push -u origin main`
+2. ✅ detecção do bloqueio `dubious ownership`
+3. ✅ adição de `safe.directory` para a pasta do projeto
+
+**Próximo passo:**
+- criar um commit curto com a atualização desta documentação
+- repetir o push para `origin/main`

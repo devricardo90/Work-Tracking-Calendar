@@ -268,3 +268,18 @@ Error: spawn EPERM
 - não insistir repetidamente no mesmo build dentro do sandbox
 - considerar executar o build manualmente fora da restrição do ambiente, se necessário
 - manter `lint` e validações locais complementares enquanto isso
+
+---
+
+## ERR-15 — Git push bloqueado por `dubious ownership`
+
+**Erro:**
+```text
+fatal: detected dubious ownership in repository
+```
+
+**Causa:** O repositório foi criado dentro do ambiente de sandbox e o Git local exigiu marcar a pasta como segura para permitir operações de push.
+
+**Solução adotada no projeto:**
+- adicionar `safe.directory` para `C:/Users/ricardodev/Desktop/calendar-project`
+- repetir o push apenas uma vez após essa correção
