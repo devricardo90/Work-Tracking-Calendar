@@ -161,3 +161,33 @@ Continuacao do registro iniciado em `docs/execucao.md`.
 
 **Arquivo atualizado:**
 1. `docs/Prd.md`
+
+---
+
+## Passo 33: Protecao de rotas privadas no frontend por sessao
+**Data:** 17 de Marco de 2026
+
+**Objetivo:**
+- impedir acesso as telas privadas da web sem login
+- alinhar o frontend com o backend que ja exige sessao valida
+
+**Alteracoes realizadas no frontend:**
+1. Criacao de `apps/web/src/lib/server-auth.ts`
+2. Atualizacao de `apps/web/src/lib/auth.ts` com leitura de sessao atual e `signOut`
+3. Criacao de `apps/web/src/app/calendar/layout.tsx`
+4. Criacao de `apps/web/src/app/entries/layout.tsx`
+5. Criacao de `apps/web/src/app/history/layout.tsx`
+6. Criacao de `apps/web/src/app/profile/layout.tsx`
+7. Criacao de `apps/web/src/app/summary/layout.tsx`
+8. Criacao de `apps/web/src/app/login/layout.tsx`
+9. Atualizacao de `apps/web/src/app/profile/page.tsx` com logout real
+
+**Comportamento implementado:**
+- a web le a sessao atual em `GET /api/auth/get-session`
+- `/calendar`, `/entries/new`, `/entries/day-details`, `/summary`, `/history` e `/profile` exigem sessao antes de renderizar
+- sem sessao valida, o usuario e redirecionado para `/login`
+- se o usuario ja estiver autenticado, `/login` redireciona para `/calendar`
+- o logout do perfil encerra a sessao e volta para `/login`
+
+**Validacao executada:**
+1. `pnpm.cmd lint` em `apps/web`

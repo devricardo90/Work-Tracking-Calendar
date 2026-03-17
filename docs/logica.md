@@ -89,6 +89,18 @@ Documento canonico das regras funcionais e decisoes de logica ja implementadas n
 - Sem sessao valida, `GET /entries`, `GET /entries/:workDate`, `POST /entries`, `PUT /entries/:id`, `DELETE /entries/:id`, `GET /profile` e `PUT /profile` retornam `401`.
 - O frontend envia cookies de sessao com `credentials: include`.
 - O backend aceita cookies cross-origin do frontend local com `credentials: true` no CORS.
+- O frontend tambem le a sessao atual pela rota `GET /api/auth/get-session`.
+- As rotas web protegidas sao bloqueadas antes da renderizacao por layouts do App Router.
+- As rotas protegidas atuais sao:
+  - `/calendar`
+  - `/entries/new`
+  - `/entries/day-details`
+  - `/summary`
+  - `/history`
+  - `/profile`
+- Sem sessao valida nessas rotas, a web redireciona para `/login`.
+- A rota `/login` redireciona para `/calendar` quando a sessao ja existe.
+- O botao de sair em `/profile` usa `POST /api/auth/sign-out`.
 
 ## Backend atual
 

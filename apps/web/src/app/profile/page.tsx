@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Bell,
@@ -26,6 +27,7 @@ import {
   updateProfile,
   type Profile,
 } from "@/lib/profile";
+import { signOut } from "@/lib/auth";
 import {
   Select,
   SelectContent,
@@ -41,6 +43,7 @@ type SettingItem = {
 };
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
   const [language, setLanguage] = useState("en");
@@ -171,6 +174,23 @@ export default function ProfilePage() {
       setErrorMessage(error instanceof Error ? error.message : "Could not save profile");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleSignOut() {
+    if (isSaving) {
+      return;
+    }
+
+    setErrorMessage(null);
+    setFeedback(null);
+
+    try {
+      await signOut();
+      router.push("/login");
+      router.refresh();
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Could not sign out");
     }
   }
 
@@ -344,7 +364,11 @@ export default function ProfilePage() {
             {isSaving ? <LoaderCircle className="size-4 animate-spin" /> : null}
             Save Settings
           </Button>
-          <button className="mt-4 w-full py-2 text-sm font-semibold text-rose-500 transition hover:text-rose-600">
+          <button
+            className="mt-4 w-full py-2 text-sm font-semibold text-rose-500 transition hover:text-rose-600"
+            onClick={handleSignOut}
+            type="button"
+          >
             Sign Out
           </button>
         </section>
