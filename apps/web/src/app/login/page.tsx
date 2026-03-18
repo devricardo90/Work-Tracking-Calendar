@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Eye, EyeOff, LoaderCircle, SquareTerminal } from "lucide-react";
+import { Eye, EyeOff, LoaderCircle, Mail, SquareTerminal } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -36,6 +36,10 @@ export default function LoginPage() {
     },
   });
   const activeForm = isSignUp ? signUpForm : signInForm;
+  const title = isSignUp ? "Create your account" : "Welcome back";
+  const subtitle = isSignUp
+    ? "Start recording your work days with real monthly data."
+    : "Sign in to continue with your saved work history.";
 
   async function handleSignInSubmit(values: SignInFormValues) {
     setIsSubmitting(true);
@@ -78,15 +82,44 @@ export default function LoginPage() {
                 WorkLog
               </p>
               <h1 className="mt-2 text-[2rem] leading-none font-semibold tracking-tight text-stone-950">
-                Welcome back
+                {title}
               </h1>
               <p className="mt-3 text-sm leading-6 text-stone-500">
-                Enter your details to access your dashboard.
+                {subtitle}
               </p>
             </div>
           </div>
 
           <div className="rounded-[2rem] border border-white/70 bg-white/88 px-5 py-6 shadow-[0_28px_90px_-42px_rgba(60,40,20,0.38)] backdrop-blur">
+            <div className="mb-5 grid grid-cols-2 rounded-[1.25rem] bg-stone-100 p-1">
+              <button
+                type="button"
+                className={`rounded-[1rem] px-4 py-2 text-sm font-semibold transition ${
+                  !isSignUp ? "bg-stone-900 text-stone-50 shadow-sm" : "text-stone-600 hover:text-stone-900"
+                }`}
+                onClick={() => {
+                  setIsSignUp(false);
+                  setFeedback(null);
+                  signUpForm.clearErrors();
+                }}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                className={`rounded-[1rem] px-4 py-2 text-sm font-semibold transition ${
+                  isSignUp ? "bg-stone-900 text-stone-50 shadow-sm" : "text-stone-600 hover:text-stone-900"
+                }`}
+                onClick={() => {
+                  setIsSignUp(true);
+                  setFeedback(null);
+                  signInForm.clearErrors();
+                }}
+              >
+                Sign Up
+              </button>
+            </div>
+
             <form
               className="space-y-4"
               onSubmit={isSignUp ? signUpForm.handleSubmit(handleSignUpSubmit) : signInForm.handleSubmit(handleSignInSubmit)}
@@ -112,30 +145,25 @@ export default function LoginPage() {
                 <Label htmlFor="email" className="px-1 text-sm font-medium text-stone-700">
                   Email
                 </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...activeForm.register("email")}
-                  placeholder="alex@company.com"
-                  className="h-12 rounded-2xl border-stone-200 bg-white px-4 text-sm"
-                />
+                <div className="relative">
+                  <Mail className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-stone-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    {...activeForm.register("email")}
+                    placeholder="alex@company.com"
+                    className="h-12 rounded-2xl border-stone-200 bg-white pr-4 pl-11 text-sm"
+                  />
+                </div>
                 {activeForm.formState.errors.email ? (
                   <p className="px-1 text-sm text-red-600">{activeForm.formState.errors.email.message}</p>
                 ) : null}
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between px-1">
-                  <Label htmlFor="password" className="text-sm font-medium text-stone-700">
-                    Password
-                  </Label>
-                  <button
-                    type="button"
-                    className="text-xs font-semibold text-stone-500 transition hover:text-stone-900"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
+                <Label htmlFor="password" className="px-1 text-sm font-medium text-stone-700">
+                  Password
+                </Label>
 
                 <div className="relative">
                   <Input
@@ -163,7 +191,7 @@ export default function LoginPage() {
 
               <Button
                 className="mt-3 h-12 w-full rounded-2xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.55)] hover:bg-stone-800"
-                disabled={isSubmitting || !activeForm.formState.isValid}
+                disabled={isSubmitting}
               >
                 {isSubmitting ? <LoaderCircle className="size-4 animate-spin" /> : null}
                 {isSignUp ? "Create Account" : "Sign In"}
@@ -191,31 +219,20 @@ export default function LoginPage() {
               </a>
             </Button>
 
-            <p className="mt-8 text-center text-sm leading-6 text-stone-500">
-              {isSignUp ? "Already have an account?" : "Don't have an account?"}
-              {" "}
-              <button
-                type="button"
-                className="font-semibold text-stone-950 hover:underline"
-                onClick={() => {
-                  setIsSignUp((current) => !current);
-                  setFeedback(null);
-                  signInForm.clearErrors();
-                  signUpForm.clearErrors();
-                }}
-              >
-                {isSignUp ? "Sign In" : "Sign Up"}
-              </button>
+            <p className="mt-6 rounded-[1.25rem] bg-stone-50 px-4 py-3 text-sm leading-6 text-stone-500">
+              {isSignUp
+                ? "Your account is created directly in the project API and you will enter the calendar right after signup."
+                : "Email and password login is active. If you already have a session, this page redirects straight to the calendar."}
             </p>
           </div>
         </div>
 
         <div className="mt-8 space-y-3 text-center">
           <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-300">
-            WorkLog v4.2.0 - Premium Productivity
+            WorkLog v4.2.0 - Real Project Mode
           </p>
           <Link href="/" className="text-xs font-medium text-stone-500 hover:text-stone-900">
-            Back to project overview
+            Back to app entry
           </Link>
         </div>
       </div>

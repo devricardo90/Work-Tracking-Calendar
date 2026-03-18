@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
 import { createEntry, getEntryByDate, toDayParam, updateEntry, type Entry } from "@/lib/entries";
+import { geocodeLocation } from "@/lib/maptiler";
 import { getProfile } from "@/lib/profile";
 import { entryFormSchema, type EntryFormValues } from "@/lib/validation";
 
@@ -146,9 +147,19 @@ export default function AddEntryPage() {
     setFeedback(null);
 
     try {
+      const coordinates = await geocodeLocation(values.location).catch(() => null);
+      const canReuseExistingCoordinates = entry?.location === values.location;
       const response = entry
-        ? await updateEntry(entry.id, values)
-        : await createEntry(values);
+        ? await updateEntry(entry.id, {
+            ...values,
+            latitude: coordinates?.lat ?? (canReuseExistingCoordinates ? entry.latitude : null) ?? null,
+            longitude: coordinates?.lng ?? (canReuseExistingCoordinates ? entry.longitude : null) ?? null,
+          })
+        : await createEntry({
+            ...values,
+            latitude: coordinates?.lat ?? null,
+            longitude: coordinates?.lng ?? null,
+          });
 
       setEntry(response.entry);
       setFeedback(entry ? "Entry updated successfully." : "Entry created successfully.");

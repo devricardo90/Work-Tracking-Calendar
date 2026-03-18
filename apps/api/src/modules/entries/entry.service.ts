@@ -9,6 +9,8 @@ export type EntryResponse = {
   workDate: string;
   hoursWorked: number;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
   notes: string | null;
   createdAt: string;
   updatedAt: string;
@@ -22,6 +24,8 @@ function toEntryResponse(entry: {
   workDate: Date;
   hoursWorked: Prisma.Decimal;
   location: string;
+  latitude: Prisma.Decimal | null;
+  longitude: Prisma.Decimal | null;
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -31,6 +35,8 @@ function toEntryResponse(entry: {
     workDate: formatDayString(entry.workDate),
     hoursWorked: Number(entry.hoursWorked),
     location: entry.location,
+    latitude: entry.latitude === null ? null : Number(entry.latitude),
+    longitude: entry.longitude === null ? null : Number(entry.longitude),
     notes: entry.notes,
     createdAt: entry.createdAt.toISOString(),
     updatedAt: entry.updatedAt.toISOString(),
@@ -79,6 +85,8 @@ export async function createEntry(prisma: AppPrismaClient, userId: string, paylo
         workDate: parseDayString(payload.workDate),
         hoursWorked: new Prisma.Decimal(payload.hoursWorked),
         location: payload.location,
+        latitude: payload.latitude == null ? null : new Prisma.Decimal(payload.latitude),
+        longitude: payload.longitude == null ? null : new Prisma.Decimal(payload.longitude),
         notes: payload.notes?.trim() ? payload.notes.trim() : null,
       },
     });
@@ -119,6 +127,8 @@ export async function updateEntry(
         workDate: parseDayString(payload.workDate),
         hoursWorked: new Prisma.Decimal(payload.hoursWorked),
         location: payload.location,
+        latitude: payload.latitude == null ? null : new Prisma.Decimal(payload.latitude),
+        longitude: payload.longitude == null ? null : new Prisma.Decimal(payload.longitude),
         notes: payload.notes?.trim() ? payload.notes.trim() : null,
       },
     });

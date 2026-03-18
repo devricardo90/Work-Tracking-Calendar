@@ -74,6 +74,6 @@ model WorkEntry {
 - Auth e ownership por sessao ja estao em andamento na API e no frontend.
 - A validacao com `Zod` no frontend deve ser adicionada no momento de endurecer os formularios com `react-hook-form`, para alinhar UI e API sem retrabalho precoce.
 - Prioridade sugerida para essa etapa:
-  - proteger rotas autenticadas no frontend
-  - estabilizar sessao e fluxo real do usuario
-  - depois adicionar `Zod` nos formularios de login, profile e entries
+- [x] proteger rotas autenticadas no frontend
+  - [x] estabilizar sessao e fluxo real do usuario (CORS integrado no Fastify para o better-auth)
+  - [ ] depois adicionar `Zod` nos formularios de login, profile e entries

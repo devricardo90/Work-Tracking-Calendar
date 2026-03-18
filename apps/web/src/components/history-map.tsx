@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { LoaderCircle, MapPinned } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { geocodeLocation, getMapStyleUrl, hasMapTilerKey } from "@/lib/maptiler";
+import { geocodeLocation, getExternalMapUrl, getMapStyleUrl, hasMapTilerKey } from "@/lib/maptiler";
 import type { Entry } from "@/lib/entries";
 
 type MarkerData = {
@@ -20,9 +20,11 @@ type MapState = "idle" | "loading" | "ready" | "error";
 
 type HistoryMapProps = {
   entries: Entry[];
+  title?: string;
+  subtitle?: string;
 };
 
-export function HistoryMap({ entries }: HistoryMapProps) {
+export function HistoryMap({ entries, title = "Work Map", subtitle }: HistoryMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<import("maplibre-gl").Map | null>(null);
   const markersRef = useRef<import("maplibre-gl").Marker[]>([]);
@@ -46,6 +48,8 @@ export function HistoryMap({ entries }: HistoryMapProps) {
         hoursWorked: number;
         entriesCount: number;
         dates: string[];
+        lat: number | null;
+        lng: number | null;
       }
     >();
 
@@ -57,6 +61,10 @@ export function HistoryMap({ entries }: HistoryMapProps) {
         current.hoursWorked += entry.hoursWorked;
         current.entriesCount += 1;
         current.dates.push(entry.workDate);
+        if (current.lat === null && entry.latitude !== null && entry.longitude !== null) {
+          current.lat = entry.latitude;
+          current.lng = entry.longitude;
+        }
         continue;
       }
 
@@ -65,6 +73,8 @@ export function HistoryMap({ entries }: HistoryMapProps) {
         hoursWorked: entry.hoursWorked,
         entriesCount: 1,
         dates: [entry.workDate],
+        lat: entry.latitude,
+        lng: entry.longitude,
       });
     }
 
@@ -97,6 +107,14 @@ export function HistoryMap({ entries }: HistoryMapProps) {
       try {
         const resolved = await Promise.all(
           locations.map(async (location) => {
+            if (location.lat !== null && location.lng !== null) {
+              return {
+                ...location,
+                lng: location.lng,
+                lat: location.lat,
+              } satisfies MarkerData;
+            }
+
             const coordinates = await geocodeLocation(location.location);
 
             if (!coordinates) {
@@ -226,13 +244,25 @@ export function HistoryMap({ entries }: HistoryMapProps) {
     <div className="overflow-hidden rounded-[1.5rem] border border-stone-200/80 bg-white/92 shadow-[0_20px_44px_-34px_rgba(50,35,20,0.3)]">
       <div className="flex items-center justify-between border-b border-stone-100 px-4 py-3">
         <div>
-          <p className="text-sm font-semibold text-stone-900">Work Map</p>
+          <p className="text-sm font-semibold text-stone-900">{title}</p>
           <p className="text-xs text-stone-500">
-            {monthLabel ? `Locais usados em ${monthLabel}` : "Locais do mes selecionado"}
+            {subtitle ?? (monthLabel ? `Locais usados em ${monthLabel}` : "Locais do mes selecionado")}
           </p>
         </div>
-        <div className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
-          {locations.length} local{locations.length === 1 ? "" : "s"}
+        <div className="flex items-center gap-2">
+          {locations.length === 1 ? (
+            <a
+              href={getExternalMapUrl(locations[0].location)}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-700 transition hover:bg-stone-50"
+            >
+              Open Map
+            </a>
+          ) : null}
+          <div className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
+            {locations.length} local{locations.length === 1 ? "" : "s"}
+          </div>
         </div>
       </div>
 

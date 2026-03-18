@@ -64,6 +64,56 @@ Continua a partir de `docs/execucao1.md`.
 **Validacao executada:**
 1. `pnpm.cmd typecheck` em `apps/api`
 2. `pnpm.cmd build` em `apps/api`
+
+---
+
+## Passo 43: Persistencia de coordenadas de maps nas entradas
+**Data:** 18 de Marco de 2026
+
+**Objetivo:**
+- deixar o mapa menos dependente de geocodificacao em tempo de render
+- persistir latitude e longitude no banco junto com cada `WorkEntry`
+- preparar a base para evolucao futura de maps com mais performance e confiabilidade
+
+**Precondicao seguida:**
+1. releitura de `docs/regras.md`
+2. releitura de `docs/seguranca.md`
+3. validacao da regra operacional de Prisma 7 + PostgreSQL antes de alterar schema
+
+**Alteracoes realizadas no banco e backend:**
+1. Atualizacao de `apps/api/prisma/schema.prisma`
+   - adicao de `latitude` e `longitude` em `WorkEntry`
+2. Atualizacao de `apps/api/src/modules/entries/entry.schemas.ts`
+   - payload de entrada passa a aceitar coordenadas opcionais
+3. Atualizacao de `apps/api/src/modules/entries/entry.service.ts`
+   - create/update passam a persistir as coordenadas
+   - list/get passam a devolver `latitude` e `longitude`
+4. Execucao de:
+   - `pnpm.cmd exec prisma generate`
+   - `pnpm.cmd exec prisma db push`
+
+**Alteracoes realizadas no frontend:**
+1. Atualizacao de `apps/web/src/lib/entries.ts`
+   - `Entry` e `EntryPayload` passam a carregar coordenadas
+2. Atualizacao de `apps/web/src/app/entries/new/page.tsx`
+   - ao salvar ou editar entrada, o frontend tenta geocodificar o local e enviar as coordenadas para a API
+3. Atualizacao de `apps/web/src/components/history-map.tsx`
+   - o mapa passa a preferir coordenadas persistidas no banco antes de geocodificar novamente
+4. Atualizacao de `apps/web/src/lib/maptiler.ts`
+   - cache simples de geocodificacao no client
+
+**Comportamento implementado:**
+- novas entradas passam a salvar `latitude` e `longitude` quando a localizacao puder ser resolvida
+- entradas editadas passam a atualizar as coordenadas quando o local mudar
+- `History` e `Day Details` reaproveitam o dado persistido quando ele ja existir
+- a geocodificacao em runtime deixa de ser o unico caminho para desenhar os pontos
+
+**Validacao executada:**
+1. `pnpm.cmd exec prisma generate`
+2. `pnpm.cmd exec prisma db push`
+3. `pnpm.cmd typecheck` em `apps/api`
+4. `pnpm.cmd build` em `apps/api`
+5. `pnpm.cmd lint` em `apps/web`
 3. `pnpm.cmd lint` em `apps/web`
 
 ---

@@ -7,6 +7,8 @@ export type Entry = {
   workDate: string;
   hoursWorked: number;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
   notes: string | null;
   createdAt: string;
   updatedAt: string;
@@ -16,6 +18,8 @@ export type EntryPayload = {
   workDate: string;
   hoursWorked: number;
   location: string;
+  latitude?: number | null;
+  longitude?: number | null;
   notes?: string;
 };
 

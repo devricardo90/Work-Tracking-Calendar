@@ -39,6 +39,8 @@ Documento canonico das regras funcionais e decisoes de logica ja implementadas n
   - o formulario entra em modo de criacao
   - usa `POST /entries`
 - Os locais salvos do perfil aparecem como selecao rapida no campo de location.
+- Ao salvar uma entrada, o frontend tenta resolver coordenadas do local e enviar `latitude` e `longitude` para a API.
+- O banco passa a persistir `latitude` e `longitude` por `WorkEntry` quando esse dado estiver disponivel.
 
 ## Day Details
 
@@ -84,6 +86,7 @@ Documento canonico das regras funcionais e decisoes de logica ja implementadas n
 - O filtro atual e orientado por mes.
 - A busca textual e feita no frontend sobre os dados ja carregados do mes.
 - Filtros mais robustos de historico podem migrar para endpoint dedicado no backend depois.
+- O mapa da `History` prefere coordenadas persistidas no banco e so geocodifica em runtime quando esse dado ainda nao existir.
 
 ## Profile
 
@@ -131,6 +134,17 @@ Documento canonico das regras funcionais e decisoes de logica ja implementadas n
 - Sem sessao valida nessas rotas, a web redireciona para `/login`.
 - A rota `/login` redireciona para `/calendar` quando a sessao ja existe.
 - O botao de sair em `/profile` usa `POST /api/auth/sign-out`.
+
+## Maps
+
+- O projeto usa `MapTiler + MapLibre` no frontend para mostrar os locais trabalhados.
+- O mapa atual aparece em:
+  - `/history`
+  - `/entries/day-details`
+- O banco salva `location` textual e, quando disponivel, tambem `latitude` e `longitude` por entrada.
+- A renderizacao atual do mapa segue esta ordem:
+  - usar coordenadas persistidas na entrada
+  - se faltarem coordenadas, geocodificar o `location` em runtime no frontend
 
 ## Erros e validacao
 

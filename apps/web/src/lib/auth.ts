@@ -67,6 +67,26 @@ async function authGetRequest<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
+async function parseAuthSuccessPayload<T>(response: Response): Promise<T> {
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!contentType.includes("application/json")) {
+    return undefined as T;
+  }
+
+  const rawBody = await response.text();
+
+  if (!rawBody.trim()) {
+    return undefined as T;
+  }
+
+  return JSON.parse(rawBody) as T;
+}
+
 async function authPostRequest<T>(path: string, payload?: Record<string, unknown>): Promise<T> {
   const response = await fetch(`${API_BASE_URL}/api/auth${path}`, {
     method: "POST",
@@ -83,11 +103,7 @@ async function authPostRequest<T>(path: string, payload?: Record<string, unknown
     await parseApiError(response, "Authentication failed");
   }
 
-  if (response.status === 204) {
-    return undefined as T;
-  };
-
-  return (await response.json()) as T;
+  return parseAuthSuccessPayload<T>(response);
 }
 
 export async function signInWithEmail(email: string, password: string) {
@@ -114,6 +130,9 @@ export async function signOut() {
 }
 
 export function getGoogleSignInUrl() {
-  const callbackURL = encodeURIComponent("http://localhost:3000/calendar");
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
+  const callbackURL = encodeURIComponent(`${appUrl}/calendar`);
   return `${API_BASE_URL}/api/auth/sign-in/social?provider=google&callbackURL=${callbackURL}`;
 }

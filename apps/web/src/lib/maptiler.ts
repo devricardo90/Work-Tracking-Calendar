@@ -1,4 +1,5 @@
 const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY?.trim() ?? "";
+const geocodingCache = new Map<string, { lng: number; lat: number } | null>();
 
 type MapTilerFeature = {
   center?: [number, number];
@@ -26,6 +27,12 @@ export async function geocodeLocation(location: string) {
     return null;
   }
 
+  const normalizedLocation = location.trim();
+
+  if (geocodingCache.has(normalizedLocation)) {
+    return geocodingCache.get(normalizedLocation) ?? null;
+  }
+
   const encodedLocation = encodeURIComponent(location);
   const response = await fetch(
     `https://api.maptiler.com/geocoding/${encodedLocation}.json?limit=1&key=${MAPTILER_KEY}`,
@@ -40,13 +47,17 @@ export async function geocodeLocation(location: string) {
   const coordinates = payload.features?.[0]?.center;
 
   if (!coordinates) {
+    geocodingCache.set(normalizedLocation, null);
     return null;
   }
 
-  return {
+  const resolvedCoordinates = {
     lng: coordinates[0],
     lat: coordinates[1],
   };
+
+  geocodingCache.set(normalizedLocation, resolvedCoordinates);
+  return resolvedCoordinates;
 }
 
 export async function searchLocationSuggestions(query: string) {
@@ -79,4 +90,8 @@ export async function searchLocationSuggestions(query: string) {
         .filter((placeName): placeName is string => Boolean(placeName)),
     ),
   );
+}
+
+export function getExternalMapUrl(location: string) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.trim())}`;
 }

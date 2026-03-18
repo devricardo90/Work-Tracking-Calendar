@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -36,11 +35,11 @@ import {
 import { profileFormSchema, savedLocationSchema, type ProfileFormValues } from "@/lib/validation";
 
 export default function ProfilePage() {
-  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [locationDraft, setLocationDraft] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const form = useForm<ProfileFormValues>({
@@ -193,19 +192,20 @@ export default function ProfilePage() {
   }
 
   async function handleSignOut() {
-    if (isSaving) {
+    if (isSaving || isSigningOut) {
       return;
     }
 
+    setIsSigningOut(true);
     setErrorMessage(null);
     setFeedback(null);
 
     try {
       await signOut();
-      router.push("/login");
-      router.refresh();
+      window.location.assign("/login");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Could not sign out");
+      setIsSigningOut(false);
     }
   }
 
@@ -385,19 +385,22 @@ export default function ProfilePage() {
           <Button
             type="submit"
             className="h-12 w-full rounded-[1.25rem] bg-stone-900 text-sm font-bold text-stone-50 hover:bg-stone-800"
-            disabled={isLoading || isSaving}
+            disabled={isLoading || isSaving || isSigningOut}
           >
             {isSaving ? <LoaderCircle className="size-4 animate-spin" /> : null}
             {!isSaving ? <Save className="size-4" /> : null}
             Save Settings
           </Button>
-          <button
-            className="mt-4 w-full py-2 text-sm font-semibold text-rose-500 transition hover:text-rose-600"
+          <Button
             onClick={handleSignOut}
             type="button"
+            variant="outline"
+            className="mt-4 h-12 w-full rounded-[1.25rem] border-2 border-rose-200 bg-white text-sm font-bold text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+            disabled={isSigningOut}
           >
-            Sign Out
-          </button>
+            {isSigningOut ? <LoaderCircle className="size-4 animate-spin" /> : null}
+            {isSigningOut ? "Signing Out..." : "Sign Out"}
+          </Button>
         </section>
       </form>
 

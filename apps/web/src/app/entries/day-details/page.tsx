@@ -11,6 +11,7 @@ import { ApiError } from "@/lib/api";
 import { deleteEntry, getEntryByDate, type Entry } from "@/lib/entries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { HistoryMap } from "@/components/history-map";
 import { MobileNav } from "@/components/mobile-nav";
 
 export default function DayDetailsPage() {
@@ -171,21 +172,12 @@ export default function DayDetailsPage() {
               </CardContent>
             </Card>
 
-            <div className="mb-8 overflow-hidden rounded-[1.6rem] border border-stone-200/80 shadow-[0_24px_50px_-36px_rgba(50,35,20,0.32)]">
-              <div className="relative h-44 bg-[linear-gradient(135deg,#e7dfd1_0%,#d5dcee_35%,#dce9de_100%)]">
-                <div className="absolute inset-0 opacity-80 [background-image:radial-gradient(circle_at_20%_30%,rgba(29,40,58,0.12)_0,transparent_28%),radial-gradient(circle_at_75%_32%,rgba(29,40,58,0.16)_0,transparent_22%),radial-gradient(circle_at_45%_75%,rgba(29,40,58,0.12)_0,transparent_24%)]" />
-                <div className="absolute inset-x-6 top-1/2 h-[2px] -translate-y-1/2 bg-stone-900/20" />
-                <div className="absolute left-[20%] top-[34%] size-4 rounded-full border-4 border-white bg-stone-900 shadow" />
-                <div className="absolute right-[22%] bottom-[28%] size-4 rounded-full border-4 border-white bg-stone-900 shadow" />
-                <div className="absolute right-4 bottom-4">
-                  <Button
-                    variant="outline"
-                    className="rounded-full border-stone-200 bg-white/90 px-4 text-stone-900 hover:bg-white"
-                  >
-                    View Map
-                  </Button>
-                </div>
-              </div>
+            <div className="mb-8">
+              <HistoryMap
+                entries={[entry]}
+                title="Current Work Location"
+                subtitle={format(parsedDate, "MMMM d, yyyy")}
+              />
             </div>
 
             <div className="space-y-4 px-2">
