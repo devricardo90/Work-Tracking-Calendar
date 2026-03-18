@@ -22,7 +22,26 @@ export async function buildApp() {
   const config = getConfig();
   const prisma = createPrismaClient(config.DATABASE_URL);
   const app = fastify({
-    logger: config.NODE_ENV !== "test",
+    logger:
+      config.NODE_ENV === "test"
+        ? false
+        : {
+            redact: {
+              censor: "[REDACTED]",
+              paths: [
+                "req.headers.authorization",
+                "req.headers.cookie",
+                "req.headers.set-cookie",
+                "req.body.password",
+                "req.body.newPassword",
+                "req.body.currentPassword",
+                "req.body.token",
+                "req.body.refreshToken",
+                "req.body.idToken",
+                "res.headers.set-cookie",
+              ],
+            },
+          },
   });
 
   app.decorate("config", config);
@@ -37,31 +56,48 @@ export async function buildApp() {
     secret: config.JWT_SECRET,
   });
 
-  await app.register(swagger, {
-    openapi: {
-      info: {
-        title: "Worker Hours API",
-        version: "1.0.0",
-      },
-      servers: [
-        {
-          url: `http://localhost:${config.PORT}`,
-          description: "Local API",
-        },
-      ],
-    },
-  });
+  const docsEnabled = config.API_DOCS_ENABLED ?? config.NODE_ENV !== "production";
 
-  await app.register(apiReference, {
-    routePrefix: "/docs/api",
-    configuration: {
-      title: "Worker Hours API",
-      theme: "kepler",
-    },
-  });
+  if (docsEnabled) {
+    await app.register(swagger, {
+      openapi: {
+        info: {
+          title: "Worker Hours API",
+          version: "1.0.0",
+        },
+        servers: [
+          {
+            url: `http://localhost:${config.PORT}`,
+            description: "Local API",
+          },
+        ],
+      },
+    });
+
+    await app.register(apiReference, {
+      routePrefix: "/docs/api",
+      configuration: {
+        title: "Worker Hours API",
+        theme: "kepler",
+      },
+    });
+  }
 
   app.addHook("onClose", async () => {
     await prisma.$disconnect();
+  });
+
+  app.setErrorHandler((error, request, reply) => {
+    request.log.error(error);
+
+    if (reply.sent) {
+      return;
+    }
+
+    reply.code(500).send({
+      message: "Internal server error",
+      code: "INTERNAL_SERVER_ERROR",
+    });
   });
 
   await app.register(entryRoutes);

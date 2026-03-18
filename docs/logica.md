@@ -60,6 +60,8 @@ Documento canonico das regras funcionais e decisoes de logica ja implementadas n
 - A lista de entradas do resumo tambem vem dessa mesma resposta mensal.
 - O botao `Export as PDF` usa:
   - `GET /reports/monthly.pdf?month=YYYY-MM`
+- A web tambem tem preview dedicado do PDF em:
+  - `/reports/preview?month=YYYY-MM`
 - O PDF mensal atual inclui:
   - nome do trabalhador
   - periodo selecionado
@@ -67,6 +69,14 @@ Documento canonico das regras funcionais e decisoes de logica ja implementadas n
   - total de dias trabalhados
   - media diaria
   - lista das entradas do mes
+- O PDF mensal atual tambem inclui:
+  - cabecalho do relatorio
+  - rodape com paginacao
+  - quebra de pagina para meses com muitos registros
+- O botao `Send by Email` usa:
+  - `POST /reports/monthly/email`
+- O envio por e-mail usa o PDF mensal como anexo
+- Sem configuracao SMTP valida no ambiente, o envio por e-mail responde erro explicito de configuracao
 
 ## History
 
@@ -98,6 +108,9 @@ Documento canonico das regras funcionais e decisoes de logica ja implementadas n
   - `sign-in`: 5 por 60 segundos
   - `sign-up`: 3 por 60 segundos
   - `sign-in/social`: 5 por 60 segundos
+- As rotas de reports tambem aplicam limitacao por usuario:
+  - `GET /reports/monthly.pdf`: 10 requisicoes por 60 segundos
+  - `POST /reports/monthly/email`: 3 requisicoes por 60 segundos
 - As rotas privadas de dominio agora resolvem o usuario pela sessao do Better Auth.
 - `entries` e `profile` nao usam mais `DEFAULT_USER_EMAIL` para ownership.
 - Sem sessao valida, `GET /entries`, `GET /entries/:workDate`, `POST /entries`, `PUT /entries/:id`, `DELETE /entries/:id`, `GET /profile` e `PUT /profile` retornam `401`.
@@ -132,7 +145,16 @@ Documento canonico das regras funcionais e decisoes de logica ja implementadas n
   - `401` para autenticacao ausente/invalida
   - `404` para recurso nao encontrado
   - `409` para conflito de entrada diaria
+  - `429` para abuso de auth/reports
   - `500` para erro interno inesperado
+- Quando um erro escapar das rotas tratadas manualmente, a API usa um handler global e responde:
+  - `message: "Internal server error"`
+  - `code: "INTERNAL_SERVER_ERROR"`
+- Os logs da API ocultam dados sensiveis como:
+  - `authorization`
+  - `cookie`
+  - `set-cookie`
+  - senhas e tokens em payloads conhecidos
 
 ## Backend atual
 
@@ -147,6 +169,7 @@ Documento canonico das regras funcionais e decisoes de logica ja implementadas n
 - `GET /profile`
 - `PUT /profile`
 - `GET /reports/monthly.pdf?month=YYYY-MM`
+- `POST /reports/monthly/email`
 - `POST /api/auth/sign-up/email`
 - `POST /api/auth/sign-in/email`
 - `GET /api/auth/sign-in/social`
@@ -156,6 +179,7 @@ Documento canonico das regras funcionais e decisoes de logica ja implementadas n
 - A documentacao da API e gerada no Fastify e exibida em Scalar.
 - URL local:
   - `http://localhost:3333/docs/api`
+- Em producao, a exposicao de docs depende da configuracao `API_DOCS_ENABLED`.
 - Como `GET /profile` e `PUT /profile` existem no backend, ambos aparecem no Scalar.
 
 ## Observacoes

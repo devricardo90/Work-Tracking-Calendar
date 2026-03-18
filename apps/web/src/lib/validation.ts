@@ -7,6 +7,8 @@ export const signInFormSchema = z.object({
   password: z.string().min(8, "Password must have at least 8 characters.").max(128),
 });
 
+export const reportRecipientSchema = z.email("Enter a valid recipient email address.");
+
 export const signUpFormSchema = signInFormSchema.extend({
   name: authNameSchema,
 });

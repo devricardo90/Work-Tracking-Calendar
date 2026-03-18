@@ -2,22 +2,46 @@ function escapePdfText(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 }
 
-function buildContentStream(lines: string[]) {
-  const commands = [
-    "BT",
-    "/F1 12 Tf",
-    "14 TL",
-  ];
+export type PdfFontKey = "sans" | "mono";
 
-  for (const line of lines) {
-    commands.push(line);
-  }
+export type PdfPage = {
+  commands: string[];
+};
 
-  commands.push("ET");
+function buildContentStream(commands: string[]) {
   return `${commands.join("\n")}\n`;
 }
 
-export function createPdfDocument(pages: string[][]) {
+export function beginText() {
+  return "BT";
+}
+
+export function endText() {
+  return "ET";
+}
+
+export function setFont(font: PdfFontKey, size: number) {
+  const fontName = font === "mono" ? "F2" : "F1";
+  return `/${fontName} ${size} Tf`;
+}
+
+export function setLeading(value: number) {
+  return `${value} TL`;
+}
+
+export function textAt(x: number, y: number, value: string) {
+  return `1 0 0 1 ${x} ${y} Tm (${escapePdfText(value)}) Tj`;
+}
+
+export function drawLine(x1: number, y1: number, x2: number, y2: number) {
+  return `${x1} ${y1} m ${x2} ${y2} l S`;
+}
+
+export function drawRectangle(x: number, y: number, width: number, height: number) {
+  return `${x} ${y} ${width} ${height} re S`;
+}
+
+export function createPdfDocument(pages: PdfPage[]) {
   const objects: string[] = [];
 
   const addObject = (content: string) => {
@@ -25,13 +49,14 @@ export function createPdfDocument(pages: string[][]) {
     return objects.length;
   };
 
-  const fontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  const sansFontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  const monoFontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>");
 
-  const pageIds = pages.map((pageLines) => {
-    const stream = buildContentStream(pageLines);
+  const pageIds = pages.map((page) => {
+    const stream = buildContentStream(page.commands);
     const contentId = addObject(`<< /Length ${Buffer.byteLength(stream, "utf8")} >>\nstream\n${stream}endstream`);
     const pageId = addObject(
-      `<< /Type /Page /Parent PAGES_ID 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentId} 0 R >>`,
+      `<< /Type /Page /Parent PAGES_ID 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${sansFontId} 0 R /F2 ${monoFontId} 0 R >> >> /Contents ${contentId} 0 R >>`,
     );
 
     return { pageId, contentId };
@@ -41,7 +66,6 @@ export function createPdfDocument(pages: string[][]) {
     `<< /Type /Pages /Kids [${pageIds.map(({ pageId }) => `${pageId} 0 R`).join(" ")}] /Count ${pageIds.length} >>`,
   );
 
-  objects[pageIds[0] ? pageIds[0].pageId - 1 : 0] = objects[pageIds[0] ? pageIds[0].pageId - 1 : 0];
   for (const { pageId } of pageIds) {
     objects[pageId - 1] = objects[pageId - 1].replace("PAGES_ID", String(pagesId));
   }
@@ -67,8 +91,4 @@ export function createPdfDocument(pages: string[][]) {
   pdf += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
 
   return Buffer.from(pdf, "utf8");
-}
-
-export function createTextLine(x: number, y: number, value: string) {
-  return `${x} ${y} Td (${escapePdfText(value)}) Tj`;
 }

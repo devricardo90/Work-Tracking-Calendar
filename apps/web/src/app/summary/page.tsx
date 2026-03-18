@@ -7,12 +7,13 @@ import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, LoaderCircle, Mail,
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { MobileNav } from "@/components/mobile-nav";
 import { ApiError, API_BASE_URL } from "@/lib/api";
-import { API_BASE_URL } from "@/lib/api";
 import { getEntriesByMonth, toMonthParam, type Entry } from "@/lib/entries";
 import { getProfile } from "@/lib/profile";
 import { sendMonthlyReportByEmail } from "@/lib/reports";
+import { reportRecipientSchema } from "@/lib/validation";
 
 export default function SummaryPage() {
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
@@ -20,6 +21,7 @@ export default function SummaryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [recipientEmail, setRecipientEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [recipientError, setRecipientError] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
@@ -85,17 +87,26 @@ export default function SummaryPage() {
   const initials = useMemo(() => "WH", []);
 
   async function handleSendByEmail() {
-    if (!recipientEmail || isSendingEmail) {
+    if (isSendingEmail) {
       return;
     }
 
-    setIsSendingEmail(true);
-    setFeedbackMessage(null);
-    setErrorMessage(null);
+    const parsedRecipient = reportRecipientSchema.safeParse(recipientEmail.trim());
+
+    if (!parsedRecipient.success) {
+      setRecipientError(parsedRecipient.error.issues[0]?.message ?? "Enter a valid recipient email address.");
+      setFeedbackMessage(null);
+      return;
+    }
+
+      setIsSendingEmail(true);
+      setRecipientError(null);
+      setFeedbackMessage(null);
+      setErrorMessage(null);
 
     try {
       const month = toMonthParam(currentMonth);
-      const result = await sendMonthlyReportByEmail(month, recipientEmail);
+      const result = await sendMonthlyReportByEmail(month, parsedRecipient.data);
       setFeedbackMessage(`Report sent to ${result.email}.`);
     } catch (error) {
       if (error instanceof ApiError && error.code === "EMAIL_NOT_CONFIGURED") {
@@ -232,24 +243,55 @@ export default function SummaryPage() {
 
         <div className="mt-6 space-y-3">
           <Button asChild className="h-12 w-full rounded-[1.25rem] bg-stone-900 text-sm font-bold text-stone-50 hover:bg-stone-800">
+            <Link href={`/reports/preview?month=${toMonthParam(currentMonth)}`}>
+              <FileSpreadsheet className="size-4" />
+              Preview PDF
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="h-12 w-full rounded-[1.25rem] border-stone-300 bg-white text-sm font-bold text-stone-900 hover:bg-stone-100">
             <a
               href={`${API_BASE_URL}/reports/monthly.pdf?month=${toMonthParam(currentMonth)}`}
               target="_blank"
               rel="noreferrer"
             >
-              <FileSpreadsheet className="size-4" />
               Export as PDF
             </a>
           </Button>
-          <Button
-            variant="outline"
-            className="h-12 w-full rounded-[1.25rem] border-2 border-stone-900 bg-transparent text-sm font-bold text-stone-900 hover:bg-stone-100"
-            onClick={handleSendByEmail}
-            disabled={isSendingEmail || !recipientEmail}
-          >
-            {isSendingEmail ? <LoaderCircle className="size-4 animate-spin" /> : <Mail className="size-4" />}
-            Send by Email
-          </Button>
+          <Card className="rounded-[1.3rem] border-stone-200/80 bg-white/92 shadow-[0_20px_44px_-34px_rgba(50,35,20,0.3)]">
+            <CardContent className="space-y-3 p-4">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-400">
+                  Email Report
+                </p>
+                <p className="text-sm text-stone-600">
+                  Send the current monthly report as a PDF attachment.
+                </p>
+              </div>
+              <Input
+                type="email"
+                value={recipientEmail}
+                onChange={(event) => {
+                  setRecipientEmail(event.target.value);
+                  if (recipientError) {
+                    setRecipientError(null);
+                  }
+                }}
+                placeholder="worker@example.com"
+                className="h-12 rounded-[1.1rem] border-stone-200 bg-white px-4"
+                disabled={isSendingEmail}
+              />
+              {recipientError ? <p className="text-sm text-red-600">{recipientError}</p> : null}
+              <Button
+                variant="outline"
+                className="h-12 w-full rounded-[1.25rem] border-2 border-stone-900 bg-transparent text-sm font-bold text-stone-900 hover:bg-stone-100"
+                onClick={handleSendByEmail}
+                disabled={isSendingEmail}
+              >
+                {isSendingEmail ? <LoaderCircle className="size-4 animate-spin" /> : <Mail className="size-4" />}
+                Send by Email
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
 

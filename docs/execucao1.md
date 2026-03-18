@@ -378,3 +378,106 @@ Continuacao do registro iniciado em `docs/execucao.md`.
 1. `pnpm.cmd typecheck` em `apps/api`
 2. `pnpm.cmd build` em `apps/api`
 3. `pnpm.cmd lint` em `apps/web`
+
+---
+
+## Passo 38: Envio do relatorio mensal por e-mail
+**Data:** 18 de Marco de 2026
+
+**Objetivo:**
+- concluir o segundo fluxo principal da fase `Reports`
+- permitir o envio do relatorio mensal em PDF por e-mail
+
+**Precondicao seguida:**
+1. revisao de `docs/seguranca.md` com foco em protecao de PDF e e-mail
+
+**Alteracoes realizadas no backend:**
+1. Atualizacao de `apps/api/src/config.ts` com variaveis SMTP opcionais
+2. Criacao de `apps/api/src/lib/mailer.ts`
+3. Atualizacao de `apps/api/src/lib/http-errors.ts` para tratar ausencia de configuracao de e-mail como `503`
+4. Atualizacao de `apps/api/src/modules/reports/report.schemas.ts`
+5. Atualizacao de `apps/api/src/modules/reports/report.service.ts` com envio do PDF anexado
+6. Atualizacao de `apps/api/src/modules/reports/report.routes.ts` com `POST /reports/monthly/email`
+7. Instalacao de `nodemailer` e `@types/nodemailer`
+
+**Alteracoes realizadas no frontend:**
+1. Criacao de `apps/web/src/lib/reports.ts`
+2. Atualizacao de `apps/web/src/app/summary/page.tsx`
+3. Ligacao do botao `Send by Email` ao backend
+4. Inclusao de feedback claro quando SMTP ainda nao estiver configurado
+
+**Comportamento implementado:**
+- o backend agora expoe `POST /reports/monthly/email`
+- a rota e protegida por sessao autenticada
+- o relatorio mensal e enviado como anexo PDF
+- o fluxo usa o e-mail do perfil como valor inicial no frontend
+- quando o SMTP nao estiver configurado, a API responde `503` com erro explicito
+
+**Pendencia operacional registrada:**
+1. o envio real ainda depende do preenchimento de `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` e `SMTP_FROM` em `apps/api/.env`
+2. essa pendencia foi registrada em `pendencias.md`
+
+**Validacao executada:**
+1. `pnpm.cmd typecheck` em `apps/api`
+2. `pnpm.cmd build` em `apps/api`
+3. `pnpm.cmd lint` em `apps/web`
+
+---
+
+## Passo 39: Melhoria do layout do PDF mensal
+**Data:** 18 de Marco de 2026
+
+**Objetivo:**
+- evoluir o PDF mensal de um formato funcional minimo para um relatorio mais legivel e mais proximo de uso real
+
+**Alteracoes realizadas no backend:**
+1. Refatoracao de `apps/api/src/lib/pdf.ts`
+2. Atualizacao de `apps/api/src/modules/reports/report.service.ts`
+
+**Melhorias aplicadas no PDF:**
+1. cabecalho mais claro com titulo e contexto do relatorio
+2. bloco de identificacao do trabalhador e periodo
+3. cards textuais de resumo para:
+   - total de horas
+   - total de dias trabalhados
+   - media diaria
+4. tabela monoespacada mais legivel
+5. rodape com paginacao
+6. melhor quebra de pagina para meses com muitos registros
+
+**Direcao adotada:**
+- manter a geracao sem dependencia externa nova de PDF
+- priorizar legibilidade e consistencia do documento antes de pensar em design mais sofisticado
+
+**Validacao executada:**
+1. `pnpm.cmd typecheck` em `apps/api`
+2. `pnpm.cmd build` em `apps/api`
+
+---
+
+## Passo 40: Preview dedicado do relatorio mensal em PDF
+**Data:** 18 de Marco de 2026
+
+**Objetivo:**
+- fechar a fase `Reports` com um fluxo de preview real do PDF
+- separar melhor preview, exportacao e envio por e-mail na UX da tela `/summary`
+
+**Alteracoes realizadas no frontend:**
+1. Criacao de `apps/web/src/app/reports/layout.tsx`
+2. Criacao de `apps/web/src/app/reports/preview/page.tsx`
+3. Atualizacao de `apps/web/src/app/summary/page.tsx`
+
+**Comportamento implementado:**
+- a web agora tem a rota protegida `/reports/preview?month=YYYY-MM`
+- essa tela carrega o PDF mensal dentro de um `iframe`
+- a tela de resumo passou a separar tres acoes distintas:
+  - `Preview PDF`
+  - `Export as PDF`
+  - `Send by Email`
+
+**Resultado pratico:**
+- o fluxo de relatorios fica mais completo e mais proximo do wireframe planejado
+- o usuario pode revisar o documento antes de baixar ou compartilhar
+
+**Validacao executada:**
+1. `pnpm.cmd lint` em `apps/web`

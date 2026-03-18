@@ -36,6 +36,12 @@ pnpm install
 docker compose up -d
 ```
 
+Configurar ambiente da API:
+
+```powershell
+Copy-Item apps\api\.env.example apps\api\.env
+```
+
 Aplicar o banco:
 
 ```powershell
@@ -86,6 +92,7 @@ pnpm dev
 - `docs/regras.md`
 - `docs/execucao.md`
 - `docs/error.md`
+- `pendencias.md`
 
 ## Observações
 

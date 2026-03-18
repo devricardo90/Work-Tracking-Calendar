@@ -3,6 +3,7 @@ import type { FastifyReply } from "fastify";
 import { ZodError } from "zod";
 
 import { MailerConfigurationError } from "./mailer.js";
+import { ReportRateLimitError } from "./report-rate-limit.js";
 import { AuthenticationError } from "../modules/auth/auth-session.js";
 import { EntryConflictError, EntryNotFoundError } from "../modules/entries/entry.service.js";
 
@@ -70,6 +71,14 @@ export function handleRouteError(reply: FastifyReply, error: unknown) {
     sendError(reply, 503, {
       message: error.message,
       code: "EMAIL_NOT_CONFIGURED",
+    });
+    return;
+  }
+
+  if (error instanceof ReportRateLimitError) {
+    sendError(reply, 429, {
+      message: error.message,
+      code: "REPORT_RATE_LIMITED",
     });
     return;
   }

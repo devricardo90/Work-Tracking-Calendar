@@ -6,12 +6,18 @@ const optionalEnvString = z
   .transform((value) => (value.length ? value : undefined))
   .optional();
 
+const optionalEnvBoolean = z
+  .enum(["true", "false"])
+  .transform((value) => value === "true")
+  .optional();
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(3333),
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(1),
   CORS_ORIGIN: z.string().min(1),
+  API_DOCS_ENABLED: optionalEnvBoolean,
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.url(),
   GOOGLE_CLIENT_ID: optionalEnvString,
