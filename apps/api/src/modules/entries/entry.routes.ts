@@ -1,12 +1,10 @@
 import type { FastifyPluginAsync, FastifyReply } from "fastify";
-import { ZodError } from "zod";
 
-import { AuthenticationError, requireAuthenticatedUser } from "../auth/auth-session.js";
+import { handleRouteError } from "../../lib/http-errors.js";
+import { requireAuthenticatedUser } from "../auth/auth-session.js";
 import {
   createEntry,
   deleteEntry,
-  EntryConflictError,
-  EntryNotFoundError,
   getEntryByDate,
   listEntriesByMonth,
   updateEntry,
@@ -101,38 +99,3 @@ export const entryRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 };
-
-function handleRouteError(reply: FastifyReply, error: unknown) {
-  if (error instanceof ZodError) {
-    reply.code(400).send({
-      message: "Invalid request",
-      issues: error.issues.map((issue) => ({
-        path: issue.path.join("."),
-        message: issue.message,
-      })),
-    });
-    return;
-  }
-
-  if (error instanceof AuthenticationError) {
-    reply.code(401).send({ message: error.message });
-    return;
-  }
-
-  if (error instanceof EntryConflictError) {
-    reply.code(409).send({ message: error.message });
-    return;
-  }
-
-  if (error instanceof EntryNotFoundError) {
-    reply.code(404).send({ message: error.message });
-    return;
-  }
-
-  if (error instanceof Error) {
-    reply.code(400).send({ message: error.message });
-    return;
-  }
-
-  reply.code(500).send({ message: "Internal server error" });
-}

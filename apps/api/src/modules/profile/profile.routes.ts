@@ -1,7 +1,7 @@
-import type { FastifyPluginAsync, FastifyReply } from "fastify";
-import { ZodError } from "zod";
+import type { FastifyPluginAsync } from "fastify";
 
-import { AuthenticationError, requireAuthenticatedUser } from "../auth/auth-session.js";
+import { handleRouteError } from "../../lib/http-errors.js";
+import { requireAuthenticatedUser } from "../auth/auth-session.js";
 import { profilePayloadSchema } from "./profile.schemas.js";
 import { getProfile, updateProfile } from "./profile.service.js";
 
@@ -13,7 +13,7 @@ export const profileRoutes: FastifyPluginAsync = async (app) => {
 
       reply.send({ profile });
     } catch (error) {
-      handleProfileRouteError(reply, error);
+      handleRouteError(reply, error);
     }
   });
 
@@ -25,32 +25,7 @@ export const profileRoutes: FastifyPluginAsync = async (app) => {
 
       reply.send({ profile });
     } catch (error) {
-      handleProfileRouteError(reply, error);
+      handleRouteError(reply, error);
     }
   });
 };
-
-function handleProfileRouteError(reply: FastifyReply, error: unknown) {
-  if (error instanceof ZodError) {
-    reply.code(400).send({
-      message: "Invalid request",
-      issues: error.issues.map((issue) => ({
-        path: issue.path.join("."),
-        message: issue.message,
-      })),
-    });
-    return;
-  }
-
-  if (error instanceof AuthenticationError) {
-    reply.code(401).send({ message: error.message });
-    return;
-  }
-
-  if (error instanceof Error) {
-    reply.code(400).send({ message: error.message });
-    return;
-  }
-
-  reply.code(500).send({ message: "Internal server error" });
-}

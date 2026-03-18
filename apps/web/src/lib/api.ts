@@ -1,15 +1,26 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
 
+type ApiIssue = {
+  path: string;
+  message: string;
+};
+
 type ApiErrorPayload = {
   message?: string;
+  code?: string;
+  issues?: ApiIssue[];
 };
 
 export class ApiError extends Error {
   status: number;
+  code?: string;
+  issues?: ApiIssue[];
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, options?: { code?: string; issues?: ApiIssue[] }) {
     super(message);
     this.status = status;
+    this.code = options?.code;
+    this.issues = options?.issues;
   }
 }
 
@@ -26,15 +37,19 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
 
   if (!response.ok) {
     let message = "Request failed";
+    let code: string | undefined;
+    let issues: ApiIssue[] | undefined;
 
     try {
       const payload = (await response.json()) as ApiErrorPayload;
       message = payload.message ?? message;
+      code = payload.code;
+      issues = payload.issues;
     } catch {
       message = response.statusText || message;
     }
 
-    throw new ApiError(response.status, message);
+    throw new ApiError(response.status, message, { code, issues });
   }
 
   if (response.status === 204) {

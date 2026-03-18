@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, LoaderCircle, Minus, Plus, X } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,25 +15,38 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
 import { createEntry, getEntryByDate, toDayParam, updateEntry, type Entry } from "@/lib/entries";
 import { getProfile } from "@/lib/profile";
+import { entryFormSchema, type EntryFormValues } from "@/lib/validation";
 
 export default function AddEntryPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const initialDate = searchParams.get("date") ?? toDayParam(new Date());
   const [currentMonth, setCurrentMonth] = useState(() => new Date(`${initialDate}T00:00:00`));
-  const [hoursWorked, setHoursWorked] = useState(8);
-  const [location, setLocation] = useState("");
-  const [notes, setNotes] = useState("");
   const [entry, setEntry] = useState<Entry | null>(null);
   const [savedLocations, setSavedLocations] = useState<string[]>([]);
   const [isLoadingEntry, setIsLoadingEntry] = useState(true);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const form = useForm<EntryFormValues>({
+    resolver: zodResolver(entryFormSchema),
+    mode: "onChange",
+    defaultValues: {
+      workDate: initialDate,
+      hoursWorked: 8,
+      location: "",
+      notes: "",
+    },
+  });
+  const hoursWorked = form.watch("hoursWorked");
+  const location = form.watch("location");
 
   useEffect(() => {
     setCurrentMonth(new Date(`${initialDate}T00:00:00`));
-  }, [initialDate]);
+    form.setValue("workDate", initialDate, {
+      shouldDirty: false,
+      shouldValidate: true,
+    });
+  }, [form, initialDate]);
 
   useEffect(() => {
     let isMounted = true;
@@ -80,9 +95,12 @@ export default function AddEntryPage() {
         }
 
         setEntry(response.entry);
-        setHoursWorked(response.entry.hoursWorked);
-        setLocation(response.entry.location);
-        setNotes(response.entry.notes ?? "");
+        form.reset({
+          workDate: initialDate,
+          hoursWorked: response.entry.hoursWorked,
+          location: response.entry.location,
+          notes: response.entry.notes ?? "",
+        });
       } catch (error) {
         if (!isMounted) {
           return;
@@ -90,9 +108,12 @@ export default function AddEntryPage() {
 
         if (error instanceof ApiError && error.status === 404) {
           setEntry(null);
-          setHoursWorked(8);
-          setLocation("");
-          setNotes("");
+          form.reset({
+            workDate: initialDate,
+            hoursWorked: 8,
+            location: "",
+            notes: "",
+          });
         } else {
           setFeedback(error instanceof Error ? error.message : "Could not load entry");
         }
@@ -108,7 +129,7 @@ export default function AddEntryPage() {
     return () => {
       isMounted = false;
     };
-  }, [initialDate]);
+  }, [form, initialDate]);
 
   const daysInMonth = useMemo(() => {
     const year = currentMonth.getFullYear();
@@ -119,26 +140,18 @@ export default function AddEntryPage() {
     return { blanks, days };
   }, [currentMonth]);
 
-  async function handleSave() {
+  async function handleSave(values: EntryFormValues) {
     setIsSaving(true);
     setFeedback(null);
 
     try {
-      const payload = {
-        workDate: initialDate,
-        hoursWorked,
-        location,
-        notes,
-      };
-
       const response = entry
-        ? await updateEntry(entry.id, payload)
-        : await createEntry(payload);
+        ? await updateEntry(entry.id, values)
+        : await createEntry(values);
 
       setEntry(response.entry);
       setFeedback(entry ? "Entry updated successfully." : "Entry created successfully.");
-      router.push(`/calendar`);
-      router.refresh();
+      window.location.assign("/calendar");
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Could not save entry");
     } finally {
@@ -221,7 +234,12 @@ export default function AddEntryPage() {
               <div className="flex items-center gap-4 rounded-[1.5rem] border border-stone-200/80 bg-white/90 p-4 shadow-[0_20px_50px_-36px_rgba(50,35,20,0.32)]">
                 <button
                   className="flex size-11 items-center justify-center rounded-full border border-stone-200 transition hover:bg-stone-100"
-                  onClick={() => setHoursWorked((value) => Math.max(0, Number((value - 0.5).toFixed(1))))}
+                  onClick={() =>
+                    form.setValue("hoursWorked", Math.max(0, Number((hoursWorked - 0.5).toFixed(1))), {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                   type="button"
                 >
                   <Minus className="size-4" />
@@ -234,7 +252,12 @@ export default function AddEntryPage() {
                 </div>
                 <button
                   className="flex size-11 items-center justify-center rounded-full border border-stone-200 transition hover:bg-stone-100"
-                  onClick={() => setHoursWorked((value) => Math.min(24, Number((value + 0.5).toFixed(1))))}
+                  onClick={() =>
+                    form.setValue("hoursWorked", Math.min(24, Number((hoursWorked + 0.5).toFixed(1))), {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                   type="button"
                 >
                   <Plus className="size-4" />
@@ -246,9 +269,17 @@ export default function AddEntryPage() {
                 max="24"
                 step="0.5"
                 value={hoursWorked}
-                onChange={(event) => setHoursWorked(Number(event.target.value))}
+                onChange={(event) =>
+                  form.setValue("hoursWorked", Number(event.target.value), {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
                 className="h-2 w-full cursor-pointer appearance-none rounded-full bg-stone-200 accent-stone-900"
               />
+              {form.formState.errors.hoursWorked ? (
+                <p className="px-1 text-sm text-red-600">{form.formState.errors.hoursWorked.message}</p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -259,9 +290,11 @@ export default function AddEntryPage() {
                 id="location"
                 placeholder="Enter site address"
                 className="h-13 rounded-[1.25rem] border-stone-200 bg-white px-4"
-                value={location}
-                onChange={(event) => setLocation(event.target.value)}
+                {...form.register("location")}
               />
+              {form.formState.errors.location ? (
+                <p className="px-1 text-sm text-red-600">{form.formState.errors.location.message}</p>
+              ) : null}
               <div className="flex flex-wrap gap-2 pt-1">
                 {savedLocations.length ? (
                   savedLocations.map((savedLocation) => {
@@ -276,7 +309,12 @@ export default function AddEntryPage() {
                             ? "border-stone-900 bg-stone-900 text-stone-50"
                             : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100"
                         }`}
-                        onClick={() => setLocation(savedLocation)}
+                        onClick={() =>
+                          form.setValue("location", savedLocation, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          })
+                        }
                       >
                         {savedLocation}
                       </button>
@@ -299,9 +337,11 @@ export default function AddEntryPage() {
                 rows={4}
                 placeholder="e.g., Half day at Site A, half at Site B"
                 className="rounded-[1.25rem] border-stone-200 bg-white p-4"
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
+                {...form.register("notes")}
               />
+              {form.formState.errors.notes ? (
+                <p className="px-1 text-sm text-red-600">{form.formState.errors.notes.message}</p>
+              ) : null}
             </div>
           </section>
         </div>
@@ -310,8 +350,8 @@ export default function AddEntryPage() {
           {feedback ? <p className="text-center text-sm text-stone-600">{feedback}</p> : null}
           <Button
             className="h-12 w-full rounded-[1.25rem] bg-stone-900 text-sm font-semibold text-stone-50 hover:bg-stone-800"
-            onClick={handleSave}
-            disabled={isSaving || isLoadingEntry || !location.trim()}
+            onClick={form.handleSubmit(handleSave)}
+            disabled={isSaving || isLoadingEntry || !form.formState.isValid}
           >
             {isSaving ? <LoaderCircle className="size-4 animate-spin" /> : null}
             {entry ? "Update Entry" : "Save Entry"}

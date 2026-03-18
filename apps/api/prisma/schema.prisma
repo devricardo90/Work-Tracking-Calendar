@@ -26,6 +26,8 @@ model User {
   image          String?
   sessions       Session[]
   accounts       Account[]
+
+  @@map("user")
 }
 
 model SavedLocation {

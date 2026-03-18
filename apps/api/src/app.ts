@@ -9,6 +9,7 @@ import { createPrismaClient, type AppPrismaClient } from "./lib/prisma.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { entryRoutes } from "./modules/entries/entry.routes.js";
 import { profileRoutes } from "./modules/profile/profile.routes.js";
+import { reportRoutes } from "./modules/reports/report.routes.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -65,6 +66,7 @@ export async function buildApp() {
 
   await app.register(entryRoutes);
   await app.register(profileRoutes);
+  await app.register(reportRoutes);
   await app.register(authRoutes);
 
   return app;

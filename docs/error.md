@@ -301,3 +301,33 @@ fatal: detected dubious ownership in repository
 - Executar `pnpm.cmd exec better-auth generate --config auth.js --yes`.
 - Remover `@@map("user")` do model `User` antes de sincronizar o banco.
 - Usar `pnpm.cmd exec prisma db push --accept-data-loss` em vez de `migrate dev` para concluir a fase de auth neste ambiente.
+
+---
+
+## ERR-16 - Better Auth travando login por incompatibilidade entre tabela `User` e `user`
+
+**Erro observado em 18 de Marco de 2026:**
+```text
+POST /api/auth/sign-in/email
+```
+ficava pendurado sem resposta no fluxo real da web, e em validacoes locais o adapter tambem apontou incompatibilidade com a tabela `public.user`.
+
+**Causa composta encontrada:**
+- o banco ficou com a tabela `"User"` maiuscula, enquanto o Better Auth com Prisma adapter passou a resolver o model para `public.user`
+- o handler Node do Better Auth recebia `request.raw` do Fastify sem o `body` parseado anexado, e o `POST` de login ficava aguardando um stream de body que o Fastify ja havia consumido
+- `auth.ts` podia ser carregado antes do `.env` local, deixando a inicializacao do auth dependente de defaults indevidos
+
+**Solucao adotada no projeto:**
+- alinhar o model `User` com `@@map("user")` no Prisma quando a estrutura real do Better Auth exigir esse nome fisico
+- alinhar o banco ao nome fisico esperado pelo auth antes de depurar login ou sessao
+- garantir que `apps/api/auth.ts` carregue o `.env` local antes de ler `process.env`
+- ao integrar Better Auth com Fastify via `toNodeHandler`, anexar `request.body` em `request.raw` antes de chamar o handler
+- sempre revalidar login real com `POST /api/auth/sign-in/email` e leitura de sessao apos qualquer ajuste de schema/auth
+
+**Regra operacional derivada:**
+- em etapas de Prisma/Auth, nao assumir que a decisao anterior sobre `@@map("user")` continua valida
+- validar sempre em conjunto:
+  - `schema.prisma`
+  - nome fisico das tabelas no Postgres
+  - comportamento real do Better Auth adapter
+- registrar qualquer divergencia de mapeamento ou runtime em `docs/error.md` e `docs/execucao1.md`

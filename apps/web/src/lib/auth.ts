@@ -33,15 +33,24 @@ type SignOutResponse = {
 
 async function parseApiError(response: Response, fallbackMessage: string) {
   let message = fallbackMessage;
+  let code: string | undefined;
+  let issues:
+    | {
+        path: string;
+        message: string;
+      }[]
+    | undefined;
 
   try {
-    const data = (await response.json()) as { message?: string };
+    const data = (await response.json()) as { message?: string; code?: string; issues?: { path: string; message: string }[] };
     message = data.message ?? message;
+    code = data.code;
+    issues = data.issues;
   } catch {
     message = response.statusText || message;
   }
 
-  throw new ApiError(response.status, message);
+  throw new ApiError(response.status, message, { code, issues });
 }
 
 async function authGetRequest<T>(path: string): Promise<T> {

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowLeft,
   Bell,
@@ -35,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { profileFormSchema, savedLocationSchema, type ProfileFormValues } from "@/lib/validation";
 
 type SettingItem = {
   title: string;
@@ -45,14 +48,23 @@ type SettingItem = {
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [name, setName] = useState("");
-  const [language, setLanguage] = useState("en");
-  const [savedLocations, setSavedLocations] = useState<string[]>([]);
   const [locationDraft, setLocationDraft] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    mode: "onChange",
+    defaultValues: {
+      name: "",
+      language: "en",
+      savedLocations: [],
+    },
+  });
+  const name = form.watch("name");
+  const language = form.watch("language");
+  const savedLocations = form.watch("savedLocations");
 
   useEffect(() => {
     let isMounted = true;
@@ -66,9 +78,11 @@ export default function ProfilePage() {
 
         if (isMounted) {
           setProfile(data.profile);
-          setName(data.profile.name);
-          setLanguage(data.profile.language);
-          setSavedLocations(data.profile.savedLocations);
+          form.reset({
+            name: data.profile.name,
+            language: data.profile.language === "pt-BR" || data.profile.language === "es" ? data.profile.language : "en",
+            savedLocations: data.profile.savedLocations,
+          });
         }
       } catch (error) {
         if (isMounted) {
@@ -86,7 +100,7 @@ export default function ProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [form]);
 
   const items: SettingItem[] = useMemo(() => {
     return [
@@ -133,22 +147,44 @@ export default function ProfilePage() {
     if (!nextLocation) {
       return;
     }
+    const parsedLocation = savedLocationSchema.safeParse(nextLocation);
 
-    setSavedLocations((current) => {
-      if (current.includes(nextLocation)) {
-        return current;
-      }
+    if (!parsedLocation.success) {
+      form.setError("savedLocations", {
+        message: parsedLocation.error.issues[0]?.message ?? "Invalid location.",
+      });
+      return;
+    }
 
-      return [...current, nextLocation];
+    const nextLocations = [...savedLocations, parsedLocation.data];
+    const parsedLocations = profileFormSchema.shape.savedLocations.safeParse(nextLocations);
+
+    if (!parsedLocations.success) {
+      form.setError("savedLocations", {
+        message: parsedLocations.error.issues[0]?.message ?? "Invalid saved locations.",
+      });
+      return;
+    }
+
+    form.setValue("savedLocations", parsedLocations.data, {
+      shouldDirty: true,
+      shouldValidate: true,
     });
     setLocationDraft("");
   }
 
   function handleRemoveLocation(location: string) {
-    setSavedLocations((current) => current.filter((item) => item !== location));
+    form.setValue(
+      "savedLocations",
+      savedLocations.filter((item) => item !== location),
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      },
+    );
   }
 
-  async function handleSave() {
+  async function handleSave(values: ProfileFormValues) {
     if (!profile || isSaving) {
       return;
     }
@@ -159,16 +195,18 @@ export default function ProfilePage() {
 
     try {
       const response = await updateProfile({
-        name,
+        name: values.name,
         email: profile.email,
-        language,
-        savedLocations,
+        language: values.language,
+        savedLocations: values.savedLocations,
       });
 
       setProfile(response.profile);
-      setName(response.profile.name);
-      setLanguage(response.profile.language);
-      setSavedLocations(response.profile.savedLocations);
+      form.reset({
+        name: response.profile.name,
+        language: response.profile.language === "pt-BR" || response.profile.language === "es" ? response.profile.language : "en",
+        savedLocations: response.profile.savedLocations,
+      });
       setFeedback("Profile saved successfully.");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Could not save profile");
@@ -243,24 +281,35 @@ export default function ProfilePage() {
             <Input
               id="profile-name"
               className="h-12 rounded-[1.25rem] border-stone-200 bg-white"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
+              {...form.register("name")}
               disabled={isLoading}
             />
+            {form.formState.errors.name ? (
+              <p className="px-1 text-sm text-red-600">{form.formState.errors.name.message}</p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
             <Label className="px-1 text-sm font-semibold text-stone-700">Language</Label>
-            <Select value={language} onValueChange={setLanguage} disabled={isLoading}>
-              <SelectTrigger className="h-12 w-full rounded-[1.25rem] border-stone-200 bg-white px-4">
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="pt-BR">Portuguese (Brazil)</SelectItem>
-                <SelectItem value="es">Spanish</SelectItem>
-              </SelectContent>
-            </Select>
+            <Controller
+              control={form.control}
+              name="language"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
+                  <SelectTrigger className="h-12 w-full rounded-[1.25rem] border-stone-200 bg-white px-4">
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="pt-BR">Portuguese (Brazil)</SelectItem>
+                    <SelectItem value="es">Spanish</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {form.formState.errors.language ? (
+              <p className="px-1 text-sm text-red-600">{form.formState.errors.language.message}</p>
+            ) : null}
           </div>
 
           <div className="space-y-3">
@@ -286,6 +335,9 @@ export default function ProfilePage() {
                 <Plus className="size-4" />
               </Button>
             </div>
+            {form.formState.errors.savedLocations ? (
+              <p className="px-1 text-sm text-red-600">{form.formState.errors.savedLocations.message}</p>
+            ) : null}
 
             <div className="flex flex-wrap gap-2">
               {savedLocations.length ? (
@@ -358,8 +410,8 @@ export default function ProfilePage() {
         <section className="mt-8">
           <Button
             className="h-12 w-full rounded-[1.25rem] bg-stone-900 text-sm font-bold text-stone-50 hover:bg-stone-800"
-            onClick={handleSave}
-            disabled={isLoading || isSaving || !name.trim()}
+            onClick={form.handleSubmit(handleSave)}
+            disabled={isLoading || isSaving || !form.formState.isValid}
           >
             {isSaving ? <LoaderCircle className="size-4 animate-spin" /> : null}
             Save Settings

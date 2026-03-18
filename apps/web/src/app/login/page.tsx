@@ -3,38 +3,61 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Eye, EyeOff, LoaderCircle, SquareTerminal } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { getGoogleSignInUrl, signInWithEmail, signUpWithEmail } from "@/lib/auth";
+import { signInFormSchema, signUpFormSchema, type SignInFormValues, type SignUpFormValues } from "@/lib/validation";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const signInForm = useForm<SignInFormValues>({
+    resolver: zodResolver(signInFormSchema),
+    mode: "onChange",
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+  const signUpForm = useForm<SignUpFormValues>({
+    resolver: zodResolver(signUpFormSchema),
+    mode: "onChange",
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+    },
+  });
+  const activeForm = isSignUp ? signUpForm : signInForm;
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSignInSubmit(values: SignInFormValues) {
     setIsSubmitting(true);
     setFeedback(null);
 
     try {
-      if (isSignUp) {
-        await signUpWithEmail(name, email, password);
-      } else {
-        await signInWithEmail(email, password);
-      }
+      await signInWithEmail(values.email, values.password);
+      window.location.assign("/calendar");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Authentication failed");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
-      router.push("/calendar");
-      router.refresh();
+  async function handleSignUpSubmit(values: SignUpFormValues) {
+    setIsSubmitting(true);
+    setFeedback(null);
+
+    try {
+      await signUpWithEmail(values.name, values.email, values.password);
+      window.location.assign("/calendar");
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Authentication failed");
     } finally {
@@ -64,7 +87,10 @@ export default function LoginPage() {
           </div>
 
           <div className="rounded-[2rem] border border-white/70 bg-white/88 px-5 py-6 shadow-[0_28px_90px_-42px_rgba(60,40,20,0.38)] backdrop-blur">
-            <form className="space-y-4" onSubmit={handleSubmit}>
+            <form
+              className="space-y-4"
+              onSubmit={isSignUp ? signUpForm.handleSubmit(handleSignUpSubmit) : signInForm.handleSubmit(handleSignInSubmit)}
+            >
               {isSignUp ? (
                 <div className="space-y-2">
                   <Label htmlFor="name" className="px-1 text-sm font-medium text-stone-700">
@@ -72,11 +98,13 @@ export default function LoginPage() {
                   </Label>
                   <Input
                     id="name"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
+                    {...signUpForm.register("name")}
                     placeholder="Alex Worker"
                     className="h-12 rounded-2xl border-stone-200 bg-white px-4 text-sm"
                   />
+                  {signUpForm.formState.errors.name ? (
+                    <p className="px-1 text-sm text-red-600">{signUpForm.formState.errors.name.message}</p>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -87,11 +115,13 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  {...activeForm.register("email")}
                   placeholder="alex@company.com"
                   className="h-12 rounded-2xl border-stone-200 bg-white px-4 text-sm"
                 />
+                {activeForm.formState.errors.email ? (
+                  <p className="px-1 text-sm text-red-600">{activeForm.formState.errors.email.message}</p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -111,8 +141,7 @@ export default function LoginPage() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
+                    {...activeForm.register("password")}
                     placeholder="********"
                     className="h-12 rounded-2xl border-stone-200 bg-white px-4 pr-12 text-sm"
                   />
@@ -125,13 +154,16 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                   </button>
                 </div>
+                {activeForm.formState.errors.password ? (
+                  <p className="px-1 text-sm text-red-600">{activeForm.formState.errors.password.message}</p>
+                ) : null}
               </div>
 
               {feedback ? <p className="text-sm text-red-600">{feedback}</p> : null}
 
               <Button
                 className="mt-3 h-12 w-full rounded-2xl bg-stone-900 text-sm font-semibold text-stone-50 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.55)] hover:bg-stone-800"
-                disabled={isSubmitting || !email.trim() || !password.trim() || (isSignUp && !name.trim())}
+                disabled={isSubmitting || !activeForm.formState.isValid}
               >
                 {isSubmitting ? <LoaderCircle className="size-4 animate-spin" /> : null}
                 {isSignUp ? "Create Account" : "Sign In"}
@@ -168,6 +200,8 @@ export default function LoginPage() {
                 onClick={() => {
                   setIsSignUp((current) => !current);
                   setFeedback(null);
+                  signInForm.clearErrors();
+                  signUpForm.clearErrors();
                 }}
               >
                 {isSignUp ? "Sign In" : "Sign Up"}

@@ -8,13 +8,20 @@ import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, LoaderCircle, Mail,
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MobileNav } from "@/components/mobile-nav";
+import { ApiError, API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL } from "@/lib/api";
 import { getEntriesByMonth, toMonthParam, type Entry } from "@/lib/entries";
+import { getProfile } from "@/lib/profile";
+import { sendMonthlyReportByEmail } from "@/lib/reports";
 
 export default function SummaryPage() {
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [entries, setEntries] = useState<Entry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -47,11 +54,59 @@ export default function SummaryPage() {
     };
   }, [currentMonth]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadRecipientEmail() {
+      try {
+        const data = await getProfile();
+
+        if (isMounted) {
+          setRecipientEmail(data.profile.email);
+        }
+      } catch {
+        if (isMounted) {
+          setRecipientEmail("");
+        }
+      }
+    }
+
+    void loadRecipientEmail();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const totalHours = entries.reduce((sum, entry) => sum + entry.hoursWorked, 0);
   const workedDays = entries.length;
   const dailyAverage = workedDays ? totalHours / workedDays : 0;
 
   const initials = useMemo(() => "WH", []);
+
+  async function handleSendByEmail() {
+    if (!recipientEmail || isSendingEmail) {
+      return;
+    }
+
+    setIsSendingEmail(true);
+    setFeedbackMessage(null);
+    setErrorMessage(null);
+
+    try {
+      const month = toMonthParam(currentMonth);
+      const result = await sendMonthlyReportByEmail(month, recipientEmail);
+      setFeedbackMessage(`Report sent to ${result.email}.`);
+    } catch (error) {
+      if (error instanceof ApiError && error.code === "EMAIL_NOT_CONFIGURED") {
+        setErrorMessage("SMTP is not configured yet. Fill the email settings in apps/api/.env before testing send by email.");
+      } else {
+        setErrorMessage(error instanceof Error ? error.message : "Could not send report by email");
+      }
+    } finally {
+      setIsSendingEmail(false);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f6f7f5_0%,#efede8_44%,#e7e2d8_100%)] text-stone-900">
@@ -101,6 +156,7 @@ export default function SummaryPage() {
         </Card>
 
         {errorMessage ? <p className="mt-4 text-center text-sm text-red-600">{errorMessage}</p> : null}
+        {feedbackMessage ? <p className="mt-4 text-center text-sm text-emerald-700">{feedbackMessage}</p> : null}
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           <Card className="rounded-[1.3rem] border-stone-200/80 bg-white/92 shadow-[0_20px_44px_-34px_rgba(50,35,20,0.3)]">
@@ -175,15 +231,23 @@ export default function SummaryPage() {
         </div>
 
         <div className="mt-6 space-y-3">
-          <Button className="h-12 w-full rounded-[1.25rem] bg-stone-900 text-sm font-bold text-stone-50 hover:bg-stone-800">
-            <FileSpreadsheet className="size-4" />
-            Export as PDF
+          <Button asChild className="h-12 w-full rounded-[1.25rem] bg-stone-900 text-sm font-bold text-stone-50 hover:bg-stone-800">
+            <a
+              href={`${API_BASE_URL}/reports/monthly.pdf?month=${toMonthParam(currentMonth)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <FileSpreadsheet className="size-4" />
+              Export as PDF
+            </a>
           </Button>
           <Button
             variant="outline"
             className="h-12 w-full rounded-[1.25rem] border-2 border-stone-900 bg-transparent text-sm font-bold text-stone-900 hover:bg-stone-100"
+            onClick={handleSendByEmail}
+            disabled={isSendingEmail || !recipientEmail}
           >
-            <Mail className="size-4" />
+            {isSendingEmail ? <LoaderCircle className="size-4 animate-spin" /> : <Mail className="size-4" />}
             Send by Email
           </Button>
         </div>
