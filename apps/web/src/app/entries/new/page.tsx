@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { LocationAutocomplete } from "@/components/location-autocomplete";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
@@ -20,6 +20,7 @@ import { entryFormSchema, type EntryFormValues } from "@/lib/validation";
 export default function AddEntryPage() {
   const searchParams = useSearchParams();
   const initialDate = searchParams.get("date") ?? toDayParam(new Date());
+  const returnMonth = searchParams.get("month") ?? initialDate.slice(0, 7);
   const [currentMonth, setCurrentMonth] = useState(() => new Date(`${initialDate}T00:00:00`));
   const [entry, setEntry] = useState<Entry | null>(null);
   const [savedLocations, setSavedLocations] = useState<string[]>([]);
@@ -151,8 +152,18 @@ export default function AddEntryPage() {
 
       setEntry(response.entry);
       setFeedback(entry ? "Entry updated successfully." : "Entry created successfully.");
-      window.location.assign("/calendar");
+      window.location.assign(`/calendar?month=${returnMonth}`);
     } catch (error) {
+      if (error instanceof ApiError && error.issues?.length) {
+        for (const issue of error.issues) {
+          if (issue.path === "hoursWorked" || issue.path === "location" || issue.path === "notes" || issue.path === "workDate") {
+            form.setError(issue.path, {
+              message: issue.message,
+            });
+          }
+        }
+      }
+
       setFeedback(error instanceof Error ? error.message : "Could not save entry");
     } finally {
       setIsSaving(false);
@@ -161,10 +172,13 @@ export default function AddEntryPage() {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f6f7f5_0%,#efede8_48%,#e7e2d8_100%)] text-stone-900">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+      <form
+        className="mx-auto flex min-h-screen w-full max-w-md flex-col"
+        onSubmit={form.handleSubmit(handleSave)}
+      >
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-stone-200/70 bg-[#f6f4ef]/85 px-4 py-4 backdrop-blur">
           <Link
-            href="/calendar"
+            href={`/calendar?month=${returnMonth}`}
             className="rounded-full p-2 transition hover:bg-stone-200/60"
             aria-label="Close"
           >
@@ -214,7 +228,7 @@ export default function AddEntryPage() {
                 return (
                   <Link
                     key={dayParam}
-                    href={`/entries/new?date=${dayParam}`}
+                    href={`/entries/new?date=${dayParam}&month=${returnMonth}`}
                     className={`flex h-10 items-center justify-center rounded-full text-sm transition ${
                       isSelected
                         ? "bg-stone-900 font-bold text-stone-50"
@@ -235,7 +249,7 @@ export default function AddEntryPage() {
                 <button
                   className="flex size-11 items-center justify-center rounded-full border border-stone-200 transition hover:bg-stone-100"
                   onClick={() =>
-                    form.setValue("hoursWorked", Math.max(0, Number((hoursWorked - 0.5).toFixed(1))), {
+                    form.setValue("hoursWorked", Math.max(0.5, Number((hoursWorked - 0.5).toFixed(1))), {
                       shouldDirty: true,
                       shouldValidate: true,
                     })
@@ -286,11 +300,22 @@ export default function AddEntryPage() {
               <Label htmlFor="location" className="px-1 text-sm font-semibold text-stone-700">
                 Location
               </Label>
-              <Input
+              <LocationAutocomplete
                 id="location"
                 placeholder="Enter site address"
-                className="h-13 rounded-[1.25rem] border-stone-200 bg-white px-4"
-                {...form.register("location")}
+                value={location}
+                onChange={(nextValue) =>
+                  form.setValue("location", nextValue, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+                onSelect={(nextValue) =>
+                  form.setValue("location", nextValue, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
               />
               {form.formState.errors.location ? (
                 <p className="px-1 text-sm text-red-600">{form.formState.errors.location.message}</p>
@@ -349,25 +374,25 @@ export default function AddEntryPage() {
         <footer className="space-y-3 border-t border-stone-200/70 bg-[#f6f4ef]/88 px-4 py-4 backdrop-blur">
           {feedback ? <p className="text-center text-sm text-stone-600">{feedback}</p> : null}
           <Button
+            type="submit"
             className="h-12 w-full rounded-[1.25rem] bg-stone-900 text-sm font-semibold text-stone-50 hover:bg-stone-800"
-            onClick={form.handleSubmit(handleSave)}
-            disabled={isSaving || isLoadingEntry || !form.formState.isValid}
+            disabled={isSaving || isLoadingEntry}
           >
             {isSaving ? <LoaderCircle className="size-4 animate-spin" /> : null}
             {entry ? "Update Entry" : "Save Entry"}
           </Button>
           <Button variant="ghost" asChild className="h-12 w-full rounded-[1.25rem] text-stone-600 hover:bg-stone-100">
-            <Link href="/calendar">
+            <Link href={`/calendar?month=${returnMonth}`}>
             Cancel
             </Link>
           </Button>
           <div className="text-center">
-            <Link href="/calendar" className="text-xs font-medium text-stone-500 hover:text-stone-900">
+            <Link href={`/calendar?month=${returnMonth}`} className="text-xs font-medium text-stone-500 hover:text-stone-900">
               Back to calendar
             </Link>
           </div>
         </footer>
-      </div>
+      </form>
     </main>
   );
 }

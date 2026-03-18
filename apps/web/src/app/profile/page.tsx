@@ -7,20 +7,16 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowLeft,
-  Bell,
-  ChevronRight,
-  Languages,
   LoaderCircle,
-  MapPinned,
-  MoreVertical,
   Pencil,
   Plus,
-  Shield,
+  Save,
   X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LocationAutocomplete } from "@/components/location-autocomplete";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MobileNav } from "@/components/mobile-nav";
@@ -38,12 +34,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { profileFormSchema, savedLocationSchema, type ProfileFormValues } from "@/lib/validation";
-
-type SettingItem = {
-  title: string;
-  subtitle: string;
-  icon: typeof MapPinned;
-};
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -65,6 +55,7 @@ export default function ProfilePage() {
   const name = form.watch("name");
   const language = form.watch("language");
   const savedLocations = form.watch("savedLocations");
+  const isDirty = form.formState.isDirty;
 
   useEffect(() => {
     let isMounted = true;
@@ -102,33 +93,6 @@ export default function ProfilePage() {
     };
   }, [form]);
 
-  const items: SettingItem[] = useMemo(() => {
-    return [
-      {
-        title: "Saved Locations",
-        subtitle: savedLocations.length
-          ? `${savedLocations.length} saved`
-          : "No saved sites yet",
-        icon: MapPinned,
-      },
-      {
-        title: "Language",
-        subtitle: language.toUpperCase(),
-        icon: Languages,
-      },
-      {
-        title: "Notification Settings",
-        subtitle: "Push, Email, SMS",
-        icon: Bell,
-      },
-      {
-        title: "Security",
-        subtitle: "Password and Biometrics",
-        icon: Shield,
-      },
-    ];
-  }, [language, savedLocations]);
-
   const initials = useMemo(() => {
     if (!name.trim()) {
       return "WH";
@@ -147,6 +111,9 @@ export default function ProfilePage() {
     if (!nextLocation) {
       return;
     }
+
+    form.clearErrors("savedLocations");
+
     const parsedLocation = savedLocationSchema.safeParse(nextLocation);
 
     if (!parsedLocation.success) {
@@ -174,6 +141,7 @@ export default function ProfilePage() {
   }
 
   function handleRemoveLocation(location: string) {
+    form.clearErrors("savedLocations");
     form.setValue(
       "savedLocations",
       savedLocations.filter((item) => item !== location),
@@ -182,6 +150,15 @@ export default function ProfilePage() {
         shouldValidate: true,
       },
     );
+  }
+
+  function handleLocationDraftKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+    handleAddLocation();
   }
 
   async function handleSave(values: ProfileFormValues) {
@@ -242,12 +219,10 @@ export default function ProfilePage() {
           <ArrowLeft className="size-5 text-stone-700" />
         </Link>
         <h1 className="text-xl font-bold tracking-tight">Profile</h1>
-        <button className="flex size-10 items-center justify-center rounded-xl transition hover:bg-stone-100">
-          <MoreVertical className="size-5 text-stone-700" />
-        </button>
+        <div className="size-10" />
       </header>
 
-      <div className="mx-auto w-full max-w-md px-6 pb-28">
+      <form className="mx-auto w-full max-w-md px-6 pb-28" onSubmit={form.handleSubmit(handleSave)}>
         <section className="pt-6">
           <Card className="rounded-[1.6rem] border-stone-200/80 bg-stone-50/80 shadow-[0_22px_50px_-36px_rgba(50,35,20,0.32)]">
             <CardContent className="flex min-h-52 flex-col items-center justify-center p-6">
@@ -259,12 +234,20 @@ export default function ProfilePage() {
                     <div className="flex size-24 items-center justify-center rounded-full border-4 border-white bg-[linear-gradient(135deg,#d8e0e8_0%,#f0ede8_100%)] text-2xl font-bold text-stone-900 shadow-sm">
                       {initials}
                     </div>
-                    <button className="absolute right-0 bottom-0 flex size-8 items-center justify-center rounded-full border-2 border-white bg-stone-900 text-stone-50 shadow-sm">
+                    <div className="absolute right-0 bottom-0 flex size-8 items-center justify-center rounded-full border-2 border-white bg-stone-900 text-stone-50 shadow-sm">
                       <Pencil className="size-4" />
-                    </button>
+                    </div>
                   </div>
                   <h2 className="text-xl font-bold text-stone-950">{name || "Worker Hours User"}</h2>
                   <p className="text-sm text-stone-500">{profile?.email ?? "worker@example.com"}</p>
+                  <div className="mt-4 flex gap-2 text-xs">
+                    <span className="rounded-full bg-white px-3 py-1 font-medium text-stone-700">
+                      {savedLocations.length} saved location{savedLocations.length === 1 ? "" : "s"}
+                    </span>
+                    <span className="rounded-full bg-white px-3 py-1 font-medium text-stone-700">
+                      {language.toUpperCase()}
+                    </span>
+                  </div>
                   {errorMessage ? <p className="mt-3 text-sm text-red-600">{errorMessage}</p> : null}
                   {feedback ? <p className="mt-3 text-sm text-emerald-700">{feedback}</p> : null}
                 </>
@@ -287,6 +270,18 @@ export default function ProfilePage() {
             {form.formState.errors.name ? (
               <p className="px-1 text-sm text-red-600">{form.formState.errors.name.message}</p>
             ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="profile-email" className="px-1 text-sm font-semibold text-stone-700">
+              Email
+            </Label>
+            <Input
+              id="profile-email"
+              className="h-12 rounded-[1.25rem] border-stone-200 bg-stone-100 text-stone-500"
+              value={profile?.email ?? ""}
+              disabled
+            />
           </div>
 
           <div className="space-y-2">
@@ -316,15 +311,21 @@ export default function ProfilePage() {
             <Label htmlFor="saved-location" className="px-1 text-sm font-semibold text-stone-700">
               Saved Locations
             </Label>
+            <p className="px-1 text-sm text-stone-500">
+              These suggestions appear when you add or edit work entries.
+            </p>
             <div className="flex gap-2">
-              <Input
-                id="saved-location"
-                className="h-12 rounded-[1.25rem] border-stone-200 bg-white"
-                placeholder="Add a work site"
-                value={locationDraft}
-                onChange={(event) => setLocationDraft(event.target.value)}
-                disabled={isLoading}
-              />
+              <div className="flex-1">
+                <LocationAutocomplete
+                  id="saved-location"
+                  placeholder="Add a work site"
+                  value={locationDraft}
+                  onChange={setLocationDraft}
+                  onSelect={setLocationDraft}
+                  onKeyDown={handleLocationDraftKeyDown}
+                  disabled={isLoading}
+                />
+              </div>
               <Button
                 type="button"
                 variant="outline"
@@ -359,36 +360,6 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        <section className="mt-6 space-y-4">
-          <h3 className="px-2 text-sm font-semibold uppercase tracking-[0.2em] text-stone-400">
-            Settings
-          </h3>
-
-          <div className="space-y-2">
-            {items.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <button
-                  key={item.title}
-                  className="flex w-full items-center justify-between rounded-[1.25rem] border border-stone-200/80 bg-white/92 p-4 text-left shadow-[0_18px_40px_-34px_rgba(50,35,20,0.28)] transition hover:bg-stone-50"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex size-10 items-center justify-center rounded-xl bg-stone-900/8 text-stone-900">
-                      <Icon className="size-5" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-stone-900">{item.title}</p>
-                      <p className="text-xs text-stone-500">{item.subtitle}</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="size-5 text-stone-400" />
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
         {savedLocations.length ? (
           <section className="mt-6">
             <h3 className="mb-3 px-2 text-sm font-semibold uppercase tracking-[0.2em] text-stone-400">
@@ -408,12 +379,16 @@ export default function ProfilePage() {
         ) : null}
 
         <section className="mt-8">
+          {isDirty ? (
+            <p className="mb-3 px-1 text-sm text-stone-500">You have unsaved profile changes.</p>
+          ) : null}
           <Button
+            type="submit"
             className="h-12 w-full rounded-[1.25rem] bg-stone-900 text-sm font-bold text-stone-50 hover:bg-stone-800"
-            onClick={form.handleSubmit(handleSave)}
-            disabled={isLoading || isSaving || !form.formState.isValid}
+            disabled={isLoading || isSaving}
           >
             {isSaving ? <LoaderCircle className="size-4 animate-spin" /> : null}
+            {!isSaving ? <Save className="size-4" /> : null}
             Save Settings
           </Button>
           <button
@@ -424,7 +399,7 @@ export default function ProfilePage() {
             Sign Out
           </button>
         </section>
-      </div>
+      </form>
 
       <MobileNav active="profile" />
     </main>

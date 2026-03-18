@@ -1,22 +1,46 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { addMonths, format, startOfMonth, subMonths } from "date-fns";
-import { ArrowLeft, ChevronDown, LoaderCircle, Map, Search } from "lucide-react";
+import { ArrowLeft, ChevronDown, LoaderCircle, Search } from "lucide-react";
 
+import { HistoryMap } from "@/components/history-map";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { MobileNav } from "@/components/mobile-nav";
 import { getEntriesByMonth, toMonthParam, type Entry } from "@/lib/entries";
 
 export default function HistoryPage() {
-  const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const monthParam = searchParams.get("month");
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    if (monthParam) {
+      return new Date(`${monthParam}-01T00:00:00`);
+    }
+
+    return startOfMonth(new Date());
+  });
   const [entries, setEntries] = useState<Entry[]>([]);
   const [query, setQuery] = useState("");
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!monthParam) {
+      return;
+    }
+
+    setCurrentMonth(new Date(`${monthParam}-01T00:00:00`));
+  }, [monthParam]);
+
+  function navigateToMonth(nextMonth: Date) {
+    setCurrentMonth(nextMonth);
+    router.push(`/history?month=${toMonthParam(nextMonth)}`);
+  }
 
   useEffect(() => {
     let isMounted = true;
@@ -75,7 +99,7 @@ export default function HistoryPage() {
       <header className="sticky top-0 z-10 bg-[#f6f4ef]/88 px-4 pt-6 pb-3 backdrop-blur">
         <div className="mb-4 flex items-center justify-between">
           <Link
-            href="/calendar"
+            href={`/calendar?month=${toMonthParam(currentMonth)}`}
             className="flex size-10 items-center justify-center rounded-full transition hover:bg-stone-200/60"
           >
             <ArrowLeft className="size-5 text-stone-900" />
@@ -96,9 +120,9 @@ export default function HistoryPage() {
         <div className="flex gap-2 overflow-x-auto pb-2">
           <button
             className="flex h-9 shrink-0 items-center gap-2 rounded-full bg-stone-900 px-4 text-sm font-medium text-stone-50"
-            onClick={() => setCurrentMonth((value) => subMonths(value, 1))}
+            onClick={() => navigateToMonth(subMonths(currentMonth, 1))}
           >
-            Month
+            Previous
             <ChevronDown className="size-4" />
           </button>
           <button
@@ -110,7 +134,7 @@ export default function HistoryPage() {
           </button>
           <button
             className="flex h-9 shrink-0 items-center gap-2 rounded-full border border-stone-300 bg-stone-200/50 px-4 text-sm font-medium text-stone-700"
-            onClick={() => setCurrentMonth((value) => addMonths(value, 1))}
+            onClick={() => navigateToMonth(addMonths(currentMonth, 1))}
           >
             {format(currentMonth, "MMM yyyy")}
             <ChevronDown className="size-4" />
@@ -135,7 +159,7 @@ export default function HistoryPage() {
                   filteredEntries.map((entry) => (
                     <Link
                       key={entry.id}
-                      href={`/entries/day-details?date=${entry.workDate}`}
+                      href={`/entries/day-details?date=${entry.workDate}&month=${toMonthParam(currentMonth)}`}
                       className="flex items-center justify-between px-4 py-4 text-left transition hover:bg-stone-50"
                     >
                       <div className="flex flex-col">
@@ -162,16 +186,8 @@ export default function HistoryPage() {
           </Card>
         </section>
 
-        <div className="mt-6 overflow-hidden rounded-[1.5rem] shadow-[0_20px_44px_-34px_rgba(50,35,20,0.3)]">
-          <div className="relative h-32 bg-[linear-gradient(135deg,#dfe5ec_0%,#ece6dc_55%,#dbe7db_100%)]">
-            <div className="absolute inset-0 opacity-80 [background-image:radial-gradient(circle_at_15%_25%,rgba(29,40,58,0.16)_0,transparent_22%),radial-gradient(circle_at_72%_38%,rgba(29,40,58,0.14)_0,transparent_18%),radial-gradient(circle_at_48%_78%,rgba(29,40,58,0.12)_0,transparent_20%)]" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <button className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-stone-900 shadow backdrop-blur">
-                <Map className="size-4" />
-                View all on map
-              </button>
-            </div>
-          </div>
+        <div className="mt-6">
+          <HistoryMap entries={filteredEntries} />
         </div>
       </div>
 

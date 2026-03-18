@@ -4,16 +4,39 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek, subMonths } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { MobileNav } from "@/components/mobile-nav";
 import { getEntriesByMonth, toDayParam, toMonthParam, type Entry } from "@/lib/entries";
 
 export default function CalendarPage() {
-  const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const monthParam = searchParams.get("month");
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    if (monthParam) {
+      return new Date(`${monthParam}-01T00:00:00`);
+    }
+
+    return startOfMonth(new Date());
+  });
   const [entries, setEntries] = useState<Entry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!monthParam) {
+      return;
+    }
+
+    setCurrentMonth(new Date(`${monthParam}-01T00:00:00`));
+  }, [monthParam]);
+
+  function navigateToMonth(nextMonth: Date) {
+    setCurrentMonth(nextMonth);
+    router.push(`/calendar?month=${toMonthParam(nextMonth)}`);
+  }
 
   useEffect(() => {
     let isMounted = true;
@@ -67,7 +90,7 @@ export default function CalendarPage() {
           <button
             className="rounded-full p-2 transition hover:bg-stone-100"
             aria-label="Previous month"
-            onClick={() => setCurrentMonth((value) => subMonths(value, 1))}
+            onClick={() => navigateToMonth(subMonths(currentMonth, 1))}
           >
             <ChevronLeft className="size-5 text-stone-600" />
           </button>
@@ -75,7 +98,7 @@ export default function CalendarPage() {
           <button
             className="rounded-full p-2 transition hover:bg-stone-100"
             aria-label="Next month"
-            onClick={() => setCurrentMonth((value) => addMonths(value, 1))}
+            onClick={() => navigateToMonth(addMonths(currentMonth, 1))}
           >
             <ChevronRight className="size-5 text-stone-600" />
           </button>
@@ -106,7 +129,11 @@ export default function CalendarPage() {
                 return (
                   <Link
                     key={dayKey}
-                    href={entry ? `/entries/day-details?date=${dayKey}` : `/entries/new?date=${dayKey}`}
+                    href={
+                      entry
+                        ? `/entries/day-details?date=${dayKey}&month=${toMonthParam(currentMonth)}`
+                        : `/entries/new?date=${dayKey}&month=${toMonthParam(currentMonth)}`
+                    }
                     className={`relative h-16 bg-white p-1 text-left sm:h-20 ${
                       isCurrentMonth ? "" : "bg-stone-50/80"
                     } ${isToday ? "ring-2 ring-inset ring-stone-900" : ""}`}
@@ -181,8 +208,11 @@ export default function CalendarPage() {
         </div>
 
         <div className="mt-3 text-center">
-          <Link href="/entries/new" className="text-xs font-medium text-stone-500 hover:text-stone-900">
-            Open the stitched add-entry screen
+          <Link
+            href={`/entries/new?date=${toDayParam(new Date())}&month=${toMonthParam(currentMonth)}`}
+            className="text-xs font-medium text-stone-500 hover:text-stone-900"
+          >
+            Open add-entry for the selected workflow
           </Link>
         </div>
       </div>

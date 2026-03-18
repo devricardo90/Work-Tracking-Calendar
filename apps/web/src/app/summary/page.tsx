@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { addMonths, format, startOfMonth, subMonths } from "date-fns";
 import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, LoaderCircle, Mail, FileSpreadsheet } from "lucide-react";
@@ -16,14 +17,32 @@ import { sendMonthlyReportByEmail } from "@/lib/reports";
 import { reportRecipientSchema } from "@/lib/validation";
 
 export default function SummaryPage() {
-  const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const monthParam = searchParams.get("month");
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    if (monthParam) {
+      return new Date(`${monthParam}-01T00:00:00`);
+    }
+
+    return startOfMonth(new Date());
+  });
   const [entries, setEntries] = useState<Entry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileName, setProfileName] = useState("Worker Hours User");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [recipientError, setRecipientError] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!monthParam) {
+      return;
+    }
+
+    setCurrentMonth(new Date(`${monthParam}-01T00:00:00`));
+  }, [monthParam]);
 
   useEffect(() => {
     let isMounted = true;
@@ -64,10 +83,12 @@ export default function SummaryPage() {
         const data = await getProfile();
 
         if (isMounted) {
+          setProfileName(data.profile.name);
           setRecipientEmail(data.profile.email);
         }
       } catch {
         if (isMounted) {
+          setProfileName("Worker Hours User");
           setRecipientEmail("");
         }
       }
@@ -85,6 +106,11 @@ export default function SummaryPage() {
   const dailyAverage = workedDays ? totalHours / workedDays : 0;
 
   const initials = useMemo(() => "WH", []);
+
+  function navigateToMonth(nextMonth: Date) {
+    setCurrentMonth(nextMonth);
+    router.push(`/summary?month=${toMonthParam(nextMonth)}`);
+  }
 
   async function handleSendByEmail() {
     if (isSendingEmail) {
@@ -123,7 +149,7 @@ export default function SummaryPage() {
     <main className="min-h-screen bg-[linear-gradient(180deg,#f6f7f5_0%,#efede8_44%,#e7e2d8_100%)] text-stone-900">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-stone-200/70 bg-white/82 px-4 py-4 backdrop-blur">
         <Link
-          href="/calendar"
+          href={`/calendar?month=${toMonthParam(currentMonth)}`}
           className="flex size-10 items-center justify-center rounded-full transition hover:bg-stone-100"
         >
           <ArrowLeft className="size-5 text-stone-900" />
@@ -131,7 +157,7 @@ export default function SummaryPage() {
         <div className="flex items-center gap-2">
           <button
             className="rounded-full p-2 transition hover:bg-stone-100"
-            onClick={() => setCurrentMonth((value) => subMonths(value, 1))}
+            onClick={() => navigateToMonth(subMonths(currentMonth, 1))}
             aria-label="Previous month"
           >
             <ChevronLeft className="size-4 text-stone-700" />
@@ -139,7 +165,7 @@ export default function SummaryPage() {
           <h1 className="text-lg font-bold tracking-tight">Monthly Summary</h1>
           <button
             className="rounded-full p-2 transition hover:bg-stone-100"
-            onClick={() => setCurrentMonth((value) => addMonths(value, 1))}
+            onClick={() => navigateToMonth(addMonths(currentMonth, 1))}
             aria-label="Next month"
           >
             <ChevronRight className="size-4 text-stone-700" />
@@ -157,7 +183,7 @@ export default function SummaryPage() {
               <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-stone-400">
                 Worker Profile
               </p>
-              <p className="text-xl font-bold text-stone-950">Worker Hours User</p>
+              <p className="text-xl font-bold text-stone-950">{profileName}</p>
               <div className="mt-1 flex items-center gap-2 text-sm font-medium text-stone-500">
                 <CalendarDays className="size-4 text-stone-700" />
                 <span>{format(currentMonth, "MMMM yyyy")}</span>
@@ -199,7 +225,7 @@ export default function SummaryPage() {
         <div className="mt-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-stone-950">Daily Entries</h2>
-            <Link href="/history" className="text-sm font-medium text-stone-700 transition hover:text-stone-950">
+            <Link href={`/history?month=${toMonthParam(currentMonth)}`} className="text-sm font-medium text-stone-700 transition hover:text-stone-950">
               View All
             </Link>
           </div>
@@ -221,7 +247,7 @@ export default function SummaryPage() {
                   entries.map((entry) => (
                     <Link
                       key={entry.id}
-                      href={`/entries/day-details?date=${entry.workDate}`}
+                      href={`/entries/day-details?date=${entry.workDate}&month=${toMonthParam(currentMonth)}`}
                       className="grid grid-cols-[1.15fr_1fr_auto] gap-2 px-4 py-3 text-sm transition hover:bg-stone-50"
                     >
                       <span className="text-stone-900">{format(new Date(`${entry.workDate}T00:00:00`), "MMM d, yyyy")}</span>

@@ -17,6 +17,7 @@ export default function DayDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const workDate = searchParams.get("date") ?? format(new Date(), "yyyy-MM-dd");
+  const returnMonth = searchParams.get("month") ?? workDate.slice(0, 7);
   const [entry, setEntry] = useState<Entry | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -78,7 +79,7 @@ export default function DayDetailsPage() {
 
     try {
       await deleteEntry(entry.id);
-      router.push("/calendar");
+      router.push(`/calendar?month=${returnMonth}`);
       router.refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Could not delete entry");
@@ -90,7 +91,7 @@ export default function DayDetailsPage() {
     <main className="min-h-screen bg-[linear-gradient(180deg,#f6f7f5_0%,#efede8_44%,#e7e2d8_100%)] text-stone-900">
       <header className="sticky top-0 z-10 flex items-center justify-between bg-[#f6f4ef]/85 px-4 pt-6 pb-3 backdrop-blur">
         <Link
-          href="/calendar"
+          href={`/calendar?month=${returnMonth}`}
           className="flex size-10 items-center justify-center rounded-full transition hover:bg-stone-200/60"
         >
           <ArrowLeft className="size-5 text-stone-900" />
@@ -118,7 +119,7 @@ export default function DayDetailsPage() {
             <CardContent className="space-y-4 p-6 text-center">
               <p className="text-sm text-stone-600">{errorMessage}</p>
               <Button asChild className="rounded-[1.25rem] bg-stone-900 text-stone-50 hover:bg-stone-800">
-                <Link href={`/entries/new?date=${workDate}`}>Create entry for this day</Link>
+                <Link href={`/entries/new?date=${workDate}&month=${returnMonth}`}>Create entry for this day</Link>
               </Button>
             </CardContent>
           </Card>
@@ -193,7 +194,7 @@ export default function DayDetailsPage() {
                 variant="outline"
                 className="h-12 w-full rounded-[1.25rem] border-2 border-stone-900 bg-transparent font-bold text-stone-900 hover:bg-stone-100"
               >
-                <Link href={`/entries/new?date=${workDate}`}>
+                <Link href={`/entries/new?date=${workDate}&month=${returnMonth}`}>
                   <Pencil className="size-4" />
                   Edit Entry
                 </Link>
