@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { MobileNav } from "@/components/mobile-nav";
-import { ApiError, API_BASE_URL } from "@/lib/api";
-import { getEntriesByMonth, toMonthParam, type Entry } from "@/lib/entries";
+import { ApiError, API_BASE_URL, isAuthenticationError } from "@/lib/api";
+import { getAppConfigStatus } from "@/lib/config-status";
+import { ENTRY_STATUS_LABELS, getEntriesByMonth, toMonthParam, type Entry } from "@/lib/entries";
 import { getProfile } from "@/lib/profile";
 import { sendMonthlyReportByEmail } from "@/lib/reports";
 import { reportRecipientSchema } from "@/lib/validation";
@@ -35,6 +36,8 @@ export default function SummaryPage() {
   const [recipientError, setRecipientError] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [isEmailReportEnabled, setIsEmailReportEnabled] = useState(false);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
 
   useEffect(() => {
     if (!monthParam) {
@@ -59,6 +62,12 @@ export default function SummaryPage() {
         }
       } catch (error) {
         if (isMounted) {
+          if (isAuthenticationError(error)) {
+            router.replace("/login");
+            router.refresh();
+            return;
+          }
+
           setErrorMessage(error instanceof Error ? error.message : "Could not load monthly summary");
         }
       } finally {
@@ -73,7 +82,7 @@ export default function SummaryPage() {
     return () => {
       isMounted = false;
     };
-  }, [currentMonth]);
+  }, [currentMonth, router]);
 
   useEffect(() => {
     let isMounted = true;
@@ -86,8 +95,14 @@ export default function SummaryPage() {
           setProfileName(data.profile.name);
           setRecipientEmail(data.profile.email);
         }
-      } catch {
+      } catch (error) {
         if (isMounted) {
+          if (isAuthenticationError(error)) {
+            router.replace("/login");
+            router.refresh();
+            return;
+          }
+
           setProfileName("Worker Hours User");
           setRecipientEmail("");
         }
@@ -99,10 +114,39 @@ export default function SummaryPage() {
     return () => {
       isMounted = false;
     };
+  }, [router]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadConfig() {
+      try {
+        const config = await getAppConfigStatus();
+
+        if (isMounted) {
+          setIsEmailReportEnabled(config.reports.email);
+        }
+      } catch {
+        if (isMounted) {
+          setIsEmailReportEnabled(false);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingConfig(false);
+        }
+      }
+    }
+
+    void loadConfig();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const totalHours = entries.reduce((sum, entry) => sum + entry.hoursWorked, 0);
-  const workedDays = entries.length;
+  const totalHours = entries.reduce((sum, entry) => sum + (entry.entryStatus === "worked" ? entry.hoursWorked : 0), 0);
+  const workedDays = entries.filter((entry) => entry.entryStatus === "worked").length;
+  const nonWorkingDays = entries.filter((entry) => entry.entryStatus !== "worked").length;
   const dailyAverage = workedDays ? totalHours / workedDays : 0;
 
   const initials = useMemo(() => "WH", []);
@@ -113,7 +157,10 @@ export default function SummaryPage() {
   }
 
   async function handleSendByEmail() {
-    if (isSendingEmail) {
+    if (isSendingEmail || !isEmailReportEnabled) {
+      if (!isEmailReportEnabled) {
+        setErrorMessage("Email reports are not configured in the API environment yet.");
+      }
       return;
     }
 
@@ -135,8 +182,16 @@ export default function SummaryPage() {
       const result = await sendMonthlyReportByEmail(month, parsedRecipient.data);
       setFeedbackMessage(`Report sent to ${result.email}.`);
     } catch (error) {
+      if (isAuthenticationError(error)) {
+        router.replace("/login");
+        router.refresh();
+        return;
+      }
+
       if (error instanceof ApiError && error.code === "EMAIL_NOT_CONFIGURED") {
         setErrorMessage("SMTP is not configured yet. Fill the email settings in apps/api/.env before testing send by email.");
+      } else if (error instanceof ApiError && error.code === "REPORT_RATE_LIMITED") {
+        setErrorMessage("Too many report requests in a short period. Wait a moment and try again.");
       } else {
         setErrorMessage(error instanceof Error ? error.message : "Could not send report by email");
       }
@@ -192,6 +247,28 @@ export default function SummaryPage() {
           </div>
         </Card>
 
+        <Card className="mt-4 rounded-[1.5rem] border-stone-200/80 bg-[linear-gradient(135deg,rgba(44,34,24,0.96),rgba(86,63,40,0.88))] text-stone-50 shadow-[0_26px_60px_-36px_rgba(50,35,20,0.52)]">
+          <CardContent className="grid grid-cols-[1fr_auto] items-center gap-4 p-5">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-stone-300/90">
+                Month Closeout
+              </p>
+              <p className="mt-2 text-lg font-semibold tracking-tight">
+                {isLoading ? "Checking totals..." : `${workedDays} worked days ready for review`}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-stone-200/90">
+                Confirm totals, preview the PDF and send the report only after this summary looks complete.
+              </p>
+            </div>
+            <div className="rounded-[1.1rem] border border-white/12 bg-white/10 px-3 py-2 text-right">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-stone-300/90">Status</p>
+              <p className="mt-1 text-sm font-semibold">
+                {errorMessage ? "Needs attention" : feedbackMessage ? "Delivered" : "Ready"}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {errorMessage ? <p className="mt-4 text-center text-sm text-red-600">{errorMessage}</p> : null}
         {feedbackMessage ? <p className="mt-4 text-center text-sm text-emerald-700">{feedbackMessage}</p> : null}
 
@@ -209,6 +286,14 @@ export default function SummaryPage() {
               <p className="text-xs font-medium text-stone-400">Worked Days</p>
               <p className="mt-1 text-3xl font-bold tracking-tight text-stone-950">
                 {isLoading ? "..." : workedDays}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-[1.3rem] border-stone-200/80 bg-white/92 shadow-[0_20px_44px_-34px_rgba(50,35,20,0.3)]">
+            <CardContent className="p-4">
+              <p className="text-xs font-medium text-stone-400">Non-working</p>
+              <p className="mt-1 text-3xl font-bold tracking-tight text-stone-950">
+                {isLoading ? "..." : nonWorkingDays}
               </p>
             </CardContent>
           </Card>
@@ -251,9 +336,11 @@ export default function SummaryPage() {
                       className="grid grid-cols-[1.15fr_1fr_auto] gap-2 px-4 py-3 text-sm transition hover:bg-stone-50"
                     >
                       <span className="text-stone-900">{format(new Date(`${entry.workDate}T00:00:00`), "MMM d, yyyy")}</span>
-                      <span className="truncate text-stone-500">{entry.location}</span>
+                      <span className="truncate text-stone-500">{entry.location ?? ENTRY_STATUS_LABELS[entry.entryStatus]}</span>
                       <span className="text-right font-bold text-stone-950">
-                        {entry.hoursWorked.toFixed(1).replace(".0", "")}h
+                        {entry.entryStatus === "worked"
+                          ? `${entry.hoursWorked.toFixed(1).replace(".0", "")}h`
+                          : ENTRY_STATUS_LABELS[entry.entryStatus]}
                       </span>
                     </Link>
                   ))
@@ -290,7 +377,11 @@ export default function SummaryPage() {
                   Email Report
                 </p>
                 <p className="text-sm text-stone-600">
-                  Send the current monthly report as a PDF attachment.
+                  {isLoadingConfig
+                    ? "Checking email delivery status..."
+                    : isEmailReportEnabled
+                      ? "Send the current monthly report as a PDF attachment."
+                      : "SMTP is not configured yet. Set the API email variables to enable real delivery."}
                 </p>
               </div>
               <Input
@@ -304,24 +395,27 @@ export default function SummaryPage() {
                 }}
                 placeholder="worker@example.com"
                 className="h-12 rounded-[1.1rem] border-stone-200 bg-white px-4"
-                disabled={isSendingEmail}
+                disabled={isSendingEmail || !isEmailReportEnabled}
               />
               {recipientError ? <p className="text-sm text-red-600">{recipientError}</p> : null}
               <Button
                 variant="outline"
                 className="h-12 w-full rounded-[1.25rem] border-2 border-stone-900 bg-transparent text-sm font-bold text-stone-900 hover:bg-stone-100"
                 onClick={handleSendByEmail}
-                disabled={isSendingEmail}
+                disabled={isSendingEmail || !isEmailReportEnabled}
               >
                 {isSendingEmail ? <LoaderCircle className="size-4 animate-spin" /> : <Mail className="size-4" />}
-                Send by Email
+                {isEmailReportEnabled ? "Send by Email" : "Email Unavailable"}
               </Button>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      <MobileNav active="summary" />
+      <MobileNav
+        active="summary"
+        addHref={`/entries/new?date=${toMonthParam(currentMonth)}-01&month=${toMonthParam(currentMonth)}`}
+      />
     </main>
   );
 }

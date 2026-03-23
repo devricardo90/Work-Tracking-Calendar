@@ -2,11 +2,14 @@ import { format } from "date-fns";
 
 import { apiRequest } from "./api";
 
+export type EntryStatus = "worked" | "day-off" | "no-work";
+
 export type Entry = {
   id: string;
   workDate: string;
+  entryStatus: EntryStatus;
   hoursWorked: number;
-  location: string;
+  location: string | null;
   latitude: number | null;
   longitude: number | null;
   notes: string | null;
@@ -16,11 +19,18 @@ export type Entry = {
 
 export type EntryPayload = {
   workDate: string;
+  entryStatus: EntryStatus;
   hoursWorked: number;
-  location: string;
+  location?: string;
   latitude?: number | null;
   longitude?: number | null;
   notes?: string;
+};
+
+export const ENTRY_STATUS_LABELS: Record<EntryStatus, string> = {
+  worked: "Worked",
+  "day-off": "Day Off",
+  "no-work": "No Work",
 };
 
 export async function getEntriesByMonth(month: string) {

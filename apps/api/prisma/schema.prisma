@@ -44,7 +44,8 @@ model WorkEntry {
   userId      String
   workDate    DateTime
   hoursWorked Decimal  @db.Decimal(5, 2)
-  location    String
+  entryStatus String   @default("worked")
+  location    String?
   latitude    Decimal? @db.Decimal(9, 6)
   longitude   Decimal? @db.Decimal(9, 6)
   notes       String?

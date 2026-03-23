@@ -40,6 +40,7 @@ Configurar ambiente da API:
 
 ```powershell
 Copy-Item apps\api\.env.example apps\api\.env
+Copy-Item apps\web\.env.example apps\web\.env.local
 ```
 
 Aplicar o banco:
@@ -92,7 +93,20 @@ pnpm dev
 - `docs/regras.md`
 - `docs/execucao.md`
 - `docs/error.md`
+- `docs/testes-manuais.md`
 - `pendencias.md`
+
+## Testes
+
+Automatizados:
+
+```powershell
+pnpm test
+```
+
+Checklist manual:
+
+- `docs/testes-manuais.md`
 
 ## Observações
 

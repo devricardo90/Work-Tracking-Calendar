@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,6 +20,7 @@ import { LocationAutocomplete } from "@/components/location-autocomplete";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MobileNav } from "@/components/mobile-nav";
+import { isAuthenticationError } from "@/lib/api";
 import {
   getProfile,
   updateProfile,
@@ -32,9 +34,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toDayParam, toMonthParam } from "@/lib/entries";
 import { profileFormSchema, savedLocationSchema, type ProfileFormValues } from "@/lib/validation";
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [locationDraft, setLocationDraft] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -76,6 +80,12 @@ export default function ProfilePage() {
         }
       } catch (error) {
         if (isMounted) {
+          if (isAuthenticationError(error)) {
+            router.replace("/login");
+            router.refresh();
+            return;
+          }
+
           setErrorMessage(error instanceof Error ? error.message : "Could not load profile");
         }
       } finally {
@@ -90,7 +100,7 @@ export default function ProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, [form]);
+  }, [form, router]);
 
   const initials = useMemo(() => {
     if (!name.trim()) {
@@ -185,6 +195,12 @@ export default function ProfilePage() {
       });
       setFeedback("Profile saved successfully.");
     } catch (error) {
+      if (isAuthenticationError(error)) {
+        router.replace("/login");
+        router.refresh();
+        return;
+      }
+
       setErrorMessage(error instanceof Error ? error.message : "Could not save profile");
     } finally {
       setIsSaving(false);
@@ -202,7 +218,8 @@ export default function ProfilePage() {
 
     try {
       await signOut();
-      window.location.assign("/login");
+      router.replace("/login");
+      router.refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Could not sign out");
       setIsSigningOut(false);
@@ -404,7 +421,10 @@ export default function ProfilePage() {
         </section>
       </form>
 
-      <MobileNav active="profile" />
+      <MobileNav
+        active="profile"
+        addHref={`/entries/new?date=${toDayParam(new Date())}&month=${toMonthParam(new Date())}`}
+      />
     </main>
   );
 }

@@ -7,8 +7,8 @@ import { ArrowLeft, Clock3, FileText, LoaderCircle, MapPinned, Pencil, Trash2 } 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { ApiError } from "@/lib/api";
-import { deleteEntry, getEntryByDate, type Entry } from "@/lib/entries";
+import { ApiError, isAuthenticationError } from "@/lib/api";
+import { deleteEntry, ENTRY_STATUS_LABELS, getEntryByDate, type Entry } from "@/lib/entries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { HistoryMap } from "@/components/history-map";
@@ -42,6 +42,12 @@ export default function DayDetailsPage() {
           return;
         }
 
+        if (isAuthenticationError(error)) {
+          router.replace("/login");
+          router.refresh();
+          return;
+        }
+
         if (error instanceof ApiError && error.status === 404) {
           setEntry(null);
           setErrorMessage("No entry was found for this date.");
@@ -60,7 +66,7 @@ export default function DayDetailsPage() {
     return () => {
       isMounted = false;
     };
-  }, [workDate]);
+  }, [router, workDate]);
 
   const parsedDate = parseISO(`${workDate}T00:00:00`);
 
@@ -83,6 +89,12 @@ export default function DayDetailsPage() {
       router.push(`/calendar?month=${returnMonth}`);
       router.refresh();
     } catch (error) {
+      if (isAuthenticationError(error)) {
+        router.replace("/login");
+        router.refresh();
+        return;
+      }
+
       setErrorMessage(error instanceof Error ? error.message : "Could not delete entry");
       setIsDeleting(false);
     }
@@ -133,11 +145,16 @@ export default function DayDetailsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-stone-400">
-                      Total Time
+                      Day Status
                     </p>
                     <h3 className="mt-1 text-3xl font-bold tracking-tight text-stone-950">
-                      {entry.hoursWorked.toFixed(1).replace(".0", "")} Hours
+                      {ENTRY_STATUS_LABELS[entry.entryStatus]}
                     </h3>
+                    <p className="mt-2 text-sm text-stone-500">
+                      {entry.entryStatus === "worked"
+                        ? `${entry.hoursWorked.toFixed(1).replace(".0", "")} working hours recorded`
+                        : "This day is stored without counting as a worked day."}
+                    </p>
                   </div>
                   <div className="rounded-2xl bg-stone-900/8 p-3 text-stone-900">
                     <Clock3 className="size-8" />
@@ -151,7 +168,9 @@ export default function DayDetailsPage() {
                     </div>
                     <div>
                       <p className="mb-1 font-semibold text-stone-900">Primary Location</p>
-                      <p className="text-sm leading-6 text-stone-500">{entry.location}</p>
+                      <p className="text-sm leading-6 text-stone-500">
+                        {entry.location ?? "No location was stored for this non-working day."}
+                      </p>
                     </div>
                   </div>
 
@@ -172,13 +191,15 @@ export default function DayDetailsPage() {
               </CardContent>
             </Card>
 
-            <div className="mb-8">
-              <HistoryMap
-                entries={[entry]}
-                title="Current Work Location"
-                subtitle={format(parsedDate, "MMMM d, yyyy")}
-              />
-            </div>
+            {entry.location ? (
+              <div className="mb-8">
+                <HistoryMap
+                  entries={[entry]}
+                  title="Current Work Location"
+                  subtitle={format(parsedDate, "MMMM d, yyyy")}
+                />
+              </div>
+            ) : null}
 
             <div className="space-y-4 px-2">
               <Button
@@ -205,7 +226,7 @@ export default function DayDetailsPage() {
         ) : null}
       </div>
 
-      <MobileNav active="calendar" />
+      <MobileNav active="calendar" addHref={`/entries/new?date=${workDate}&month=${returnMonth}`} />
     </main>
   );
 }

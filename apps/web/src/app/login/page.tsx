@@ -1,23 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, EyeOff, LoaderCircle, Mail, SquareTerminal } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { getGoogleSignInUrl, signInWithEmail, signUpWithEmail } from "@/lib/auth";
+import { getAppConfigStatus } from "@/lib/config-status";
 import { signInFormSchema, signUpFormSchema, type SignInFormValues, type SignUpFormValues } from "@/lib/validation";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
   const signInForm = useForm<SignInFormValues>({
     resolver: zodResolver(signInFormSchema),
     mode: "onChange",
@@ -41,13 +47,42 @@ export default function LoginPage() {
     ? "Start recording your work days with real monthly data."
     : "Sign in to continue with your saved work history.";
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadConfig() {
+      try {
+        const config = await getAppConfigStatus();
+
+        if (isMounted) {
+          setGoogleEnabled(config.auth.google);
+        }
+      } catch {
+        if (isMounted) {
+          setGoogleEnabled(false);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingConfig(false);
+        }
+      }
+    }
+
+    void loadConfig();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   async function handleSignInSubmit(values: SignInFormValues) {
     setIsSubmitting(true);
     setFeedback(null);
 
     try {
       await signInWithEmail(values.email, values.password);
-      window.location.assign("/calendar");
+      router.replace("/calendar");
+      router.refresh();
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Authentication failed");
     } finally {
@@ -61,7 +96,8 @@ export default function LoginPage() {
 
     try {
       await signUpWithEmail(values.name, values.email, values.password);
-      window.location.assign("/calendar");
+      router.replace("/calendar");
+      router.refresh();
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Authentication failed");
     } finally {
@@ -206,23 +242,42 @@ export default function LoginPage() {
               <Separator className="flex-1 bg-stone-200" />
             </div>
 
-            <Button
-              asChild
-              variant="outline"
-              className="h-12 w-full rounded-2xl border-stone-200 bg-white text-sm font-medium text-stone-700 hover:bg-stone-50"
-            >
-              <a href={getGoogleSignInUrl()}>
-                <span className="flex size-5 items-center justify-center rounded-full bg-[conic-gradient(from_180deg_at_50%_50%,#4285F4_0deg,#34A853_130deg,#FBBC05_230deg,#EA4335_320deg,#4285F4_360deg)] text-[10px] font-bold text-white">
-                  G
-                </span>
-                Continue with Google
-              </a>
-            </Button>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
+                  Sign-in options
+                </p>
+                <Badge variant={googleEnabled ? "secondary" : "outline"}>
+                  {isLoadingConfig ? "Checking..." : googleEnabled ? "Google ready" : "Email only"}
+                </Badge>
+              </div>
+
+              {googleEnabled ? (
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-12 w-full rounded-2xl border-stone-200 bg-white text-sm font-medium text-stone-700 hover:bg-stone-50"
+                >
+                  <a href={getGoogleSignInUrl()}>
+                    <span className="flex size-5 items-center justify-center rounded-full bg-[conic-gradient(from_180deg_at_50%_50%,#4285F4_0deg,#34A853_130deg,#FBBC05_230deg,#EA4335_320deg,#4285F4_360deg)] text-[10px] font-bold text-white">
+                      G
+                    </span>
+                    Continue with Google
+                  </a>
+                </Button>
+              ) : (
+                <div className="rounded-[1.25rem] border border-dashed border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-500">
+                  Google sign-in is not configured in the API environment yet.
+                </div>
+              )}
+            </div>
 
             <p className="mt-6 rounded-[1.25rem] bg-stone-50 px-4 py-3 text-sm leading-6 text-stone-500">
               {isSignUp
                 ? "Your account is created directly in the project API and you will enter the calendar right after signup."
-                : "Email and password login is active. If you already have a session, this page redirects straight to the calendar."}
+                : googleEnabled
+                  ? "Email/password and Google login are available. If you already have a session, this page redirects straight to the calendar."
+                  : "Email and password login is active. If you already have a session, this page redirects straight to the calendar."}
             </p>
           </div>
         </div>

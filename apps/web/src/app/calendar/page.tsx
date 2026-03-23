@@ -8,7 +8,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { MobileNav } from "@/components/mobile-nav";
-import { getEntriesByMonth, toDayParam, toMonthParam, type Entry } from "@/lib/entries";
+import { isAuthenticationError } from "@/lib/api";
+import { ENTRY_STATUS_LABELS, getEntriesByMonth, toDayParam, toMonthParam, type Entry } from "@/lib/entries";
 
 export default function CalendarPage() {
   const router = useRouter();
@@ -53,6 +54,12 @@ export default function CalendarPage() {
         }
       } catch (error) {
         if (isMounted) {
+          if (isAuthenticationError(error)) {
+            router.replace("/login");
+            router.refresh();
+            return;
+          }
+
           setErrorMessage(error instanceof Error ? error.message : "Could not load entries");
         }
       } finally {
@@ -67,7 +74,7 @@ export default function CalendarPage() {
     return () => {
       isMounted = false;
     };
-  }, [currentMonth]);
+  }, [currentMonth, router]);
 
   const calendarDays = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 0 });
@@ -80,8 +87,8 @@ export default function CalendarPage() {
     return new Map(entries.map((entry) => [entry.workDate, entry]));
   }, [entries]);
 
-  const totalHours = entries.reduce((sum, entry) => sum + entry.hoursWorked, 0);
-  const daysWorked = entries.length;
+  const totalHours = entries.reduce((sum, entry) => sum + (entry.entryStatus === "worked" ? entry.hoursWorked : 0), 0);
+  const daysWorked = entries.filter((entry) => entry.entryStatus === "worked").length;
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8f8f5_0%,#f1eee9_44%,#e9e4db_100%)] text-stone-900">
@@ -106,6 +113,32 @@ export default function CalendarPage() {
       </header>
 
       <div className="mx-auto w-full max-w-md px-4 py-4">
+        <Card className="mb-5 overflow-hidden rounded-[1.6rem] border-stone-200/80 bg-[linear-gradient(135deg,rgba(44,34,24,0.96),rgba(86,63,40,0.88))] text-stone-50 shadow-[0_26px_60px_-36px_rgba(50,35,20,0.52)]">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-stone-300/90">
+                  Operational View
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+                  {format(currentMonth, "MMMM yyyy")}
+                </h2>
+                <p className="mt-2 max-w-[16rem] text-sm leading-6 text-stone-200/90">
+                  Review worked days, fill gaps and keep the month ready for export.
+                </p>
+              </div>
+              <div className="rounded-[1.15rem] border border-white/12 bg-white/10 px-3 py-2 text-right">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-stone-300/90">
+                  Status
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  {isLoading ? "Syncing..." : errorMessage ? "Needs attention" : "Up to date"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="overflow-hidden rounded-[1.5rem] border-stone-200/80 bg-white/90 py-0 shadow-[0_24px_60px_-34px_rgba(50,35,20,0.35)]">
           <CardContent className="p-4">
             <div className="mb-2 grid grid-cols-7">
@@ -151,10 +184,20 @@ export default function CalendarPage() {
                     </span>
                     {entry ? (
                       <>
-                        <span className="absolute top-1 right-1 rounded bg-stone-900/8 px-1 text-[10px] font-bold text-stone-900">
-                          {entry.hoursWorked}h
+                        <span
+                          className={`absolute top-1 right-1 rounded px-1 text-[10px] font-bold ${
+                            entry.entryStatus === "worked"
+                              ? "bg-stone-900/8 text-stone-900"
+                              : "bg-amber-100 text-amber-800"
+                          }`}
+                        >
+                          {entry.entryStatus === "worked" ? `${entry.hoursWorked}h` : ENTRY_STATUS_LABELS[entry.entryStatus]}
                         </span>
-                        <span className="absolute bottom-2 left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-stone-900" />
+                        <span
+                          className={`absolute bottom-2 left-1/2 size-1.5 -translate-x-1/2 rounded-full ${
+                            entry.entryStatus === "worked" ? "bg-stone-900" : "bg-amber-500"
+                          }`}
+                        />
                       </>
                     ) : null}
                   </Link>
@@ -198,26 +241,38 @@ export default function CalendarPage() {
           </Card>
         </div>
 
-        <div className="mt-5 text-center">
-          <Link
-            href={`/entries/day-details?date=${toDayParam(new Date())}`}
-            className="text-xs font-medium text-stone-500 hover:text-stone-900"
-          >
-            Open the day-details route for today
-          </Link>
-        </div>
-
-        <div className="mt-3 text-center">
-          <Link
-            href={`/entries/new?date=${toDayParam(new Date())}&month=${toMonthParam(currentMonth)}`}
-            className="text-xs font-medium text-stone-500 hover:text-stone-900"
-          >
-            Open add-entry for the selected workflow
-          </Link>
-        </div>
+        <Card className="mt-5 rounded-[1.5rem] border-stone-200/80 bg-white/90 shadow-[0_20px_50px_-36px_rgba(50,35,20,0.32)]">
+          <CardContent className="space-y-4 p-5">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-stone-400">
+                Quick Actions
+              </p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-stone-950">
+                Keep the month updated
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              <Link
+                href={`/entries/new?date=${toDayParam(new Date())}&month=${toMonthParam(currentMonth)}`}
+                className="rounded-[1.15rem] border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-medium text-stone-800 transition hover:bg-stone-100"
+              >
+                Add or update today&apos;s entry
+              </Link>
+              <Link
+                href={`/summary?month=${toMonthParam(currentMonth)}`}
+                className="rounded-[1.15rem] border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+              >
+                Review monthly summary
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <MobileNav active="calendar" />
+      <MobileNav
+        active="calendar"
+        addHref={`/entries/new?date=${toDayParam(new Date())}&month=${toMonthParam(currentMonth)}`}
+      />
     </main>
   );
 }

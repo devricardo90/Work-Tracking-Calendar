@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, LoaderCircle, Minus, Plus, X } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { addMonths, format, subMonths } from "date-fns";
 import { useForm } from "react-hook-form";
@@ -12,13 +12,14 @@ import { Button } from "@/components/ui/button";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ApiError } from "@/lib/api";
-import { createEntry, getEntryByDate, toDayParam, updateEntry, type Entry } from "@/lib/entries";
+import { ApiError, isAuthenticationError } from "@/lib/api";
+import { createEntry, ENTRY_STATUS_LABELS, getEntryByDate, toDayParam, updateEntry, type Entry, type EntryStatus } from "@/lib/entries";
 import { geocodeLocation } from "@/lib/maptiler";
 import { getProfile } from "@/lib/profile";
 import { entryFormSchema, type EntryFormValues } from "@/lib/validation";
 
 export default function AddEntryPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialDate = searchParams.get("date") ?? toDayParam(new Date());
   const returnMonth = searchParams.get("month") ?? initialDate.slice(0, 7);
@@ -34,6 +35,7 @@ export default function AddEntryPage() {
     mode: "onChange",
     defaultValues: {
       workDate: initialDate,
+      entryStatus: "worked",
       hoursWorked: 8,
       location: "",
       notes: "",
@@ -41,6 +43,8 @@ export default function AddEntryPage() {
   });
   const hoursWorked = form.watch("hoursWorked");
   const location = form.watch("location");
+  const entryStatus = form.watch("entryStatus");
+  const isWorkedDay = entryStatus === "worked";
 
   useEffect(() => {
     setCurrentMonth(new Date(`${initialDate}T00:00:00`));
@@ -64,8 +68,14 @@ export default function AddEntryPage() {
         }
 
         setSavedLocations(response.profile.savedLocations);
-      } catch {
+      } catch (error) {
         if (isMounted) {
+          if (isAuthenticationError(error)) {
+            router.replace("/login");
+            router.refresh();
+            return;
+          }
+
           setSavedLocations([]);
         }
       } finally {
@@ -80,7 +90,7 @@ export default function AddEntryPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     let isMounted = true;
@@ -99,8 +109,9 @@ export default function AddEntryPage() {
         setEntry(response.entry);
         form.reset({
           workDate: initialDate,
+          entryStatus: response.entry.entryStatus,
           hoursWorked: response.entry.hoursWorked,
-          location: response.entry.location,
+          location: response.entry.location ?? "",
           notes: response.entry.notes ?? "",
         });
       } catch (error) {
@@ -108,10 +119,17 @@ export default function AddEntryPage() {
           return;
         }
 
+        if (isAuthenticationError(error)) {
+          router.replace("/login");
+          router.refresh();
+          return;
+        }
+
         if (error instanceof ApiError && error.status === 404) {
           setEntry(null);
           form.reset({
             workDate: initialDate,
+            entryStatus: "worked",
             hoursWorked: 8,
             location: "",
             notes: "",
@@ -131,7 +149,31 @@ export default function AddEntryPage() {
     return () => {
       isMounted = false;
     };
-  }, [form, initialDate]);
+  }, [form, initialDate, router]);
+
+  function applyEntryStatus(nextStatus: EntryStatus) {
+    form.setValue("entryStatus", nextStatus, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+
+    if (nextStatus === "worked") {
+      form.setValue("hoursWorked", hoursWorked > 0 ? hoursWorked : 8, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      return;
+    }
+
+    form.setValue("hoursWorked", 0, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue("location", "", {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }
 
   const daysInMonth = useMemo(() => {
     const year = currentMonth.getFullYear();
@@ -147,24 +189,35 @@ export default function AddEntryPage() {
     setFeedback(null);
 
     try {
-      const coordinates = await geocodeLocation(values.location).catch(() => null);
-      const canReuseExistingCoordinates = entry?.location === values.location;
+      const normalizedLocation = values.entryStatus === "worked" ? values.location.trim() : "";
+      const coordinates =
+        values.entryStatus === "worked" ? await geocodeLocation(normalizedLocation).catch(() => null) : null;
+      const canReuseExistingCoordinates = entry?.location === normalizedLocation;
       const response = entry
         ? await updateEntry(entry.id, {
             ...values,
+            location: normalizedLocation,
             latitude: coordinates?.lat ?? (canReuseExistingCoordinates ? entry.latitude : null) ?? null,
             longitude: coordinates?.lng ?? (canReuseExistingCoordinates ? entry.longitude : null) ?? null,
           })
         : await createEntry({
             ...values,
+            location: normalizedLocation,
             latitude: coordinates?.lat ?? null,
             longitude: coordinates?.lng ?? null,
           });
 
       setEntry(response.entry);
       setFeedback(entry ? "Entry updated successfully." : "Entry created successfully.");
-      window.location.assign(`/calendar?month=${returnMonth}`);
+      router.replace(`/calendar?month=${returnMonth}`);
+      router.refresh();
     } catch (error) {
+      if (isAuthenticationError(error)) {
+        router.replace("/login");
+        router.refresh();
+        return;
+      }
+
       if (error instanceof ApiError && error.issues?.length) {
         for (const issue of error.issues) {
           if (issue.path === "hoursWorked" || issue.path === "location" || issue.path === "notes" || issue.path === "workDate") {
@@ -173,6 +226,12 @@ export default function AddEntryPage() {
             });
           }
         }
+      }
+
+      if (error instanceof ApiError && error.code === "ENTRY_CONFLICT") {
+        form.setError("workDate", {
+          message: "An entry already exists for this date.",
+        });
       }
 
       setFeedback(error instanceof Error ? error.message : "Could not save entry");
@@ -200,12 +259,35 @@ export default function AddEntryPage() {
         </header>
 
         <div className="flex-1 space-y-7 px-4 py-4">
+          <section className="rounded-[1.5rem] border border-stone-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.95),rgba(242,237,229,0.96))] p-4 shadow-[0_24px_60px_-34px_rgba(50,35,20,0.24)]">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-stone-400">
+                  Selected Day
+                </p>
+                <h2 className="mt-1 text-xl font-semibold tracking-tight text-stone-950">
+                  {format(new Date(`${initialDate}T00:00:00`), "EEEE, MMM d")}
+                </h2>
+                <p className="mt-1 text-sm text-stone-500">
+                  Register a worked day, a day off or a no-work day without inflating worked totals.
+                </p>
+              </div>
+              <div className="rounded-[1.1rem] border border-stone-200 bg-white px-3 py-2 text-right">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-stone-400">Entry</p>
+                <p className="mt-1 text-sm font-semibold text-stone-800">
+                  {isLoadingEntry ? "Loading..." : entry ? "Updating" : "New"}
+                </p>
+              </div>
+            </div>
+          </section>
+
           <section className="rounded-[1.5rem] border border-stone-200/80 bg-white/90 p-4 shadow-[0_24px_60px_-34px_rgba(50,35,20,0.35)]">
             <div className="mb-4 flex items-center justify-between">
               <button
                 className="rounded-full p-2 transition hover:bg-stone-100"
                 aria-label="Previous month"
                 onClick={() => setCurrentMonth((value) => subMonths(value, 1))}
+                type="button"
               >
                 <ChevronLeft className="size-5" />
               </button>
@@ -214,6 +296,7 @@ export default function AddEntryPage() {
                 className="rounded-full p-2 transition hover:bg-stone-100"
                 aria-label="Next month"
                 onClick={() => setCurrentMonth((value) => addMonths(value, 1))}
+                type="button"
               >
                 <ChevronRight className="size-5" />
               </button>
@@ -255,6 +338,30 @@ export default function AddEntryPage() {
 
           <section className="space-y-6">
             <div className="space-y-3">
+              <Label className="px-1 text-sm font-semibold text-stone-700">Day Status</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["worked", "day-off", "no-work"] as EntryStatus[]).map((status) => {
+                  const isSelected = entryStatus === status;
+
+                  return (
+                    <button
+                      key={status}
+                      type="button"
+                      className={`rounded-[1.15rem] border px-3 py-3 text-sm font-medium transition ${
+                        isSelected
+                          ? "border-stone-900 bg-stone-900 text-stone-50"
+                          : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100"
+                      }`}
+                      onClick={() => applyEntryStatus(status)}
+                    >
+                      {ENTRY_STATUS_LABELS[status]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-3">
               <Label className="px-1 text-sm font-semibold text-stone-700">Hours Worked</Label>
               <div className="flex items-center gap-4 rounded-[1.5rem] border border-stone-200/80 bg-white/90 p-4 shadow-[0_20px_50px_-36px_rgba(50,35,20,0.32)]">
                 <button
@@ -266,6 +373,7 @@ export default function AddEntryPage() {
                     })
                   }
                   type="button"
+                  disabled={!isWorkedDay}
                 >
                   <Minus className="size-4" />
                 </button>
@@ -284,6 +392,7 @@ export default function AddEntryPage() {
                     })
                   }
                   type="button"
+                  disabled={!isWorkedDay}
                 >
                   <Plus className="size-4" />
                 </button>
@@ -301,9 +410,18 @@ export default function AddEntryPage() {
                   })
                 }
                 className="h-2 w-full cursor-pointer appearance-none rounded-full bg-stone-200 accent-stone-900"
+                disabled={!isWorkedDay}
               />
+              {!isWorkedDay ? (
+                <p className="px-1 text-xs text-stone-500">
+                  Non-working days are saved with 0 hours and stay out of worked-day totals.
+                </p>
+              ) : null}
               {form.formState.errors.hoursWorked ? (
                 <p className="px-1 text-sm text-red-600">{form.formState.errors.hoursWorked.message}</p>
+              ) : null}
+              {form.formState.errors.workDate ? (
+                <p className="px-1 text-sm text-red-600">{form.formState.errors.workDate.message}</p>
               ) : null}
             </div>
 
@@ -313,7 +431,7 @@ export default function AddEntryPage() {
               </Label>
               <LocationAutocomplete
                 id="location"
-                placeholder="Enter site address"
+                placeholder={isWorkedDay ? "Enter site address" : "Not required for non-working days"}
                 value={location}
                 onChange={(nextValue) =>
                   form.setValue("location", nextValue, {
@@ -327,12 +445,13 @@ export default function AddEntryPage() {
                     shouldValidate: true,
                   })
                 }
+                disabled={!isWorkedDay}
               />
               {form.formState.errors.location ? (
                 <p className="px-1 text-sm text-red-600">{form.formState.errors.location.message}</p>
               ) : null}
               <div className="flex flex-wrap gap-2 pt-1">
-                {savedLocations.length ? (
+                {isWorkedDay && savedLocations.length ? (
                   savedLocations.map((savedLocation) => {
                     const isSelected = savedLocation === location;
 
@@ -358,7 +477,11 @@ export default function AddEntryPage() {
                   })
                 ) : (
                   <p className="px-1 text-xs text-stone-500">
-                    {isLoadingProfile ? "Loading saved locations..." : "No saved locations yet."}
+                    {isWorkedDay
+                      ? isLoadingProfile
+                        ? "Loading saved locations..."
+                        : "No saved locations yet."
+                      : "Location is optional for day off and no-work records."}
                   </p>
                 )}
               </div>

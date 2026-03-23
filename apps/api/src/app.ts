@@ -47,6 +47,18 @@ export async function buildApp() {
   app.decorate("config", config);
   app.decorate("prisma", prisma);
 
+  app.get("/config/status", async () => {
+    return {
+      auth: {
+        emailPassword: true,
+        google: Boolean(config.GOOGLE_CLIENT_ID && config.GOOGLE_CLIENT_SECRET),
+      },
+      reports: {
+        email: Boolean(config.SMTP_HOST && config.SMTP_PORT && config.SMTP_FROM),
+      },
+    };
+  });
+
   await app.register(cors, {
     origin: config.CORS_ORIGIN,
     credentials: true,

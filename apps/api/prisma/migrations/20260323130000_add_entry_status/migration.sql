@@ -1,0 +1,5 @@
+ALTER TABLE "WorkEntry"
+ADD COLUMN "entryStatus" TEXT NOT NULL DEFAULT 'worked';
+
+ALTER TABLE "WorkEntry"
+ALTER COLUMN "location" DROP NOT NULL;

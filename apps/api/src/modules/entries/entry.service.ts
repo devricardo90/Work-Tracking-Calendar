@@ -4,11 +4,14 @@ import { formatDayString, getMonthRange, parseDayString } from "../../lib/dates.
 import type { AppPrismaClient } from "../../lib/prisma.js";
 import type { EntryPayload } from "./entry.schemas.js";
 
+export type EntryStatus = "worked" | "day-off" | "no-work";
+
 export type EntryResponse = {
   id: string;
   workDate: string;
+  entryStatus: EntryStatus;
   hoursWorked: number;
-  location: string;
+  location: string | null;
   latitude: number | null;
   longitude: number | null;
   notes: string | null;
@@ -22,8 +25,9 @@ export class EntryNotFoundError extends Error {}
 function toEntryResponse(entry: {
   id: string;
   workDate: Date;
+  entryStatus: string;
   hoursWorked: Prisma.Decimal;
-  location: string;
+  location: string | null;
   latitude: Prisma.Decimal | null;
   longitude: Prisma.Decimal | null;
   notes: string | null;
@@ -33,6 +37,7 @@ function toEntryResponse(entry: {
   return {
     id: entry.id,
     workDate: formatDayString(entry.workDate),
+    entryStatus: entry.entryStatus as EntryStatus,
     hoursWorked: Number(entry.hoursWorked),
     location: entry.location,
     latitude: entry.latitude === null ? null : Number(entry.latitude),
@@ -79,14 +84,18 @@ export async function getEntryByDate(prisma: AppPrismaClient, userId: string, wo
 
 export async function createEntry(prisma: AppPrismaClient, userId: string, payload: EntryPayload) {
   try {
+    const isWorkedDay = payload.entryStatus === "worked";
     const entry = await prisma.workEntry.create({
       data: {
         userId,
         workDate: parseDayString(payload.workDate),
         hoursWorked: new Prisma.Decimal(payload.hoursWorked),
-        location: payload.location,
-        latitude: payload.latitude == null ? null : new Prisma.Decimal(payload.latitude),
-        longitude: payload.longitude == null ? null : new Prisma.Decimal(payload.longitude),
+        entryStatus: payload.entryStatus,
+        location: isWorkedDay ? payload.location?.trim() ?? null : null,
+        latitude:
+          isWorkedDay && payload.latitude != null ? new Prisma.Decimal(payload.latitude) : null,
+        longitude:
+          isWorkedDay && payload.longitude != null ? new Prisma.Decimal(payload.longitude) : null,
         notes: payload.notes?.trim() ? payload.notes.trim() : null,
       },
     });
@@ -119,6 +128,7 @@ export async function updateEntry(
   }
 
   try {
+    const isWorkedDay = payload.entryStatus === "worked";
     const entry = await prisma.workEntry.update({
       where: {
         id: existingEntry.id,
@@ -126,9 +136,12 @@ export async function updateEntry(
       data: {
         workDate: parseDayString(payload.workDate),
         hoursWorked: new Prisma.Decimal(payload.hoursWorked),
-        location: payload.location,
-        latitude: payload.latitude == null ? null : new Prisma.Decimal(payload.latitude),
-        longitude: payload.longitude == null ? null : new Prisma.Decimal(payload.longitude),
+        entryStatus: payload.entryStatus,
+        location: isWorkedDay ? payload.location?.trim() ?? null : null,
+        latitude:
+          isWorkedDay && payload.latitude != null ? new Prisma.Decimal(payload.latitude) : null,
+        longitude:
+          isWorkedDay && payload.longitude != null ? new Prisma.Decimal(payload.longitude) : null,
         notes: payload.notes?.trim() ? payload.notes.trim() : null,
       },
     });

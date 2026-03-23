@@ -24,6 +24,10 @@ export class ApiError extends Error {
   }
 }
 
+export function isAuthenticationError(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 401;
+}
+
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,

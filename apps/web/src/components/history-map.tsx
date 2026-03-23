@@ -54,6 +54,10 @@ export function HistoryMap({ entries, title = "Work Map", subtitle }: HistoryMap
     >();
 
     for (const entry of entries) {
+      if (!entry.location?.trim()) {
+        continue;
+      }
+
       const locationKey = entry.location.trim();
       const current = grouped.get(locationKey);
 

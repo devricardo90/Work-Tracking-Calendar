@@ -21,6 +21,8 @@ export const savedLocationSchema = z
   .min(2, "Location must have at least 2 characters.")
   .max(120, "Location must have at most 120 characters.");
 
+export const entryStatusSchema = z.enum(["worked", "day-off", "no-work"]);
+
 export const profileFormSchema = z.object({
   name: authNameSchema,
   language: profileLanguageSchema,
@@ -33,12 +35,39 @@ export const profileFormSchema = z.object({
     ),
 });
 
-export const entryFormSchema = z.object({
-  workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must use YYYY-MM-DD."),
-  hoursWorked: z.coerce.number().positive("Hours worked must be greater than 0.").max(24, "Hours worked cannot exceed 24."),
-  location: savedLocationSchema,
-  notes: z.string().trim().max(1000, "Notes must have at most 1000 characters.").optional().or(z.literal("")),
-});
+export const entryFormSchema = z
+  .object({
+    workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must use YYYY-MM-DD."),
+    entryStatus: entryStatusSchema,
+    hoursWorked: z.coerce.number().min(0, "Hours worked cannot be negative.").max(24, "Hours worked cannot exceed 24."),
+    location: z.string().trim().max(120, "Location must have at most 120 characters."),
+    notes: z.string().trim().max(1000, "Notes must have at most 1000 characters.").optional().or(z.literal("")),
+  })
+  .superRefine((value, ctx) => {
+    if (value.entryStatus === "worked") {
+      if (value.hoursWorked <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["hoursWorked"],
+          message: "Hours worked must be greater than 0.",
+        });
+      }
+
+      if (value.location.trim().length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["location"],
+          message: "Location must have at least 2 characters.",
+        });
+      }
+    } else if (value.hoursWorked !== 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["hoursWorked"],
+        message: "Non-working days must use 0 hours.",
+      });
+    }
+  });
 
 export type SignInFormValues = z.infer<typeof signInFormSchema>;
 export type SignUpFormValues = z.infer<typeof signUpFormSchema>;
