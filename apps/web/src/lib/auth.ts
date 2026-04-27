@@ -126,7 +126,7 @@ export async function getCurrentSession() {
 }
 
 export async function signOut() {
-  return authPostRequest<SignOutResponse>("/sign-out");
+  return authPostRequest<SignOutResponse>("/sign-out", {});
 }
 
 export function getGoogleSignInUrl() {

@@ -41,7 +41,7 @@ export default function LoginPage() {
       password: "",
     },
   });
-  const activeForm = isSignUp ? signUpForm : signInForm;
+  const activeForm = (isSignUp ? signUpForm : signInForm) as any;
   const title = isSignUp ? "Create your account" : "Welcome back";
   const subtitle = isSignUp
     ? "Start recording your work days with real monthly data."
