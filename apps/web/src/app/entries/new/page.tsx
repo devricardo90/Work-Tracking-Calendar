@@ -303,8 +303,8 @@ export default function AddEntryPage() {
             </div>
 
             <div className="mb-2 grid grid-cols-7 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-stone-400">
-              {["S", "M", "T", "W", "T", "F", "S"].map((day) => (
-                <span key={day} className="py-2">
+              {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
+                <span key={`${day}-${index}`} className="py-2">
                   {day}
                 </span>
               ))}
