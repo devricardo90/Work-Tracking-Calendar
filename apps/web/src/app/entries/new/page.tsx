@@ -31,7 +31,7 @@ export default function AddEntryPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const form = useForm<EntryFormValues>({
-    resolver: zodResolver(entryFormSchema) as any,
+    resolver: zodResolver(entryFormSchema),
     mode: "onChange",
     defaultValues: {
       workDate: initialDate,

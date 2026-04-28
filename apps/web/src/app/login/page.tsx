@@ -41,7 +41,10 @@ export default function LoginPage() {
       password: "",
     },
   });
-  const activeForm = (isSignUp ? signUpForm : signInForm) as any;
+  const emailRegistration = isSignUp ? signUpForm.register("email") : signInForm.register("email");
+  const passwordRegistration = isSignUp ? signUpForm.register("password") : signInForm.register("password");
+  const emailError = isSignUp ? signUpForm.formState.errors.email : signInForm.formState.errors.email;
+  const passwordError = isSignUp ? signUpForm.formState.errors.password : signInForm.formState.errors.password;
   const title = isSignUp ? "Create your account" : "Welcome back";
   const subtitle = isSignUp
     ? "Start recording your work days with real monthly data."
@@ -186,13 +189,13 @@ export default function LoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    {...activeForm.register("email")}
+                    {...emailRegistration}
                     placeholder="alex@company.com"
                     className="h-12 rounded-2xl border-stone-200 bg-white pr-4 pl-11 text-sm"
                   />
                 </div>
-                {activeForm.formState.errors.email ? (
-                  <p className="px-1 text-sm text-red-600">{activeForm.formState.errors.email.message}</p>
+                {emailError ? (
+                  <p className="px-1 text-sm text-red-600">{emailError.message}</p>
                 ) : null}
               </div>
 
@@ -205,7 +208,7 @@ export default function LoginPage() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    {...activeForm.register("password")}
+                    {...passwordRegistration}
                     placeholder="********"
                     className="h-12 rounded-2xl border-stone-200 bg-white px-4 pr-12 text-sm"
                   />
@@ -218,8 +221,8 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                   </button>
                 </div>
-                {activeForm.formState.errors.password ? (
-                  <p className="px-1 text-sm text-red-600">{activeForm.formState.errors.password.message}</p>
+                {passwordError ? (
+                  <p className="px-1 text-sm text-red-600">{passwordError.message}</p>
                 ) : null}
               </div>
 

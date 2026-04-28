@@ -39,7 +39,7 @@ export const entryFormSchema = z
   .object({
     workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must use YYYY-MM-DD."),
     entryStatus: entryStatusSchema,
-    hoursWorked: z.coerce.number().min(0, "Hours worked cannot be negative.").max(24, "Hours worked cannot exceed 24."),
+    hoursWorked: z.coerce.number<number>().min(0, "Hours worked cannot be negative.").max(24, "Hours worked cannot exceed 24."),
     location: z.string().trim().max(120, "Location must have at most 120 characters."),
     notes: z.string().trim().max(1000, "Notes must have at most 1000 characters.").optional().or(z.literal("")),
   })
