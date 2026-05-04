@@ -1,4 +1,7 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
+const API_BASE_URL =
+  typeof window !== "undefined"
+    ? "/api/proxy"
+    : (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333");
 
 type ApiIssue = {
   path: string;
