@@ -1,46 +1,52 @@
 # Deployment Baseline Handoff
 
-## Estado do Deploy: IN_PROGRESS / PAUSED ⏸️
+## Estado do Deploy: VALIDATED
 
-Este documento registra o ponto exato de parada do deploy baseline para a próxima sessão.
+Este documento registra o estado final confirmado do deploy baseline em producao.
 
-### 1. Resumo Técnico (Preflight Local)
-O código local e no repositório GitHub está validado e pronto para deploy:
-- **Lint (Web):** OK
-- **Typecheck (Web):** OK
-- **Build (Web):** OK (Next.js 16.1.6)
-- **Build (API):** OK (TSC + Prisma Generate)
-- **Migrations:** Migration crítica `20260427210533_sync_auth_schema` versionada e pronta.
+Data do registro: 2026-05-05
 
-### 2. Estado dos Providers
-- **Vercel (Web):** 
-  - Primeira tentativa apresentou erro de configuração (Build Command vs Root Directory).
-  - **Ação necessária:** Configurar `Root Directory: apps/web` e `Build Command: pnpm build` (ou recriar o projeto).
-- **Render/Railway (API):**
-  - Aguardando confirmação final de deploy bem-sucedido com as variáveis de ambiente corretas.
+### 1. Commit ativo
+
+- **Commit ativo:** `13b2cd9 fix: route web auth through first-party proxy`
+- **Vercel (Production):** Ready, rodando o commit `13b2cd9`
+- **GitHub `origin/main`:** `13b2cd9`
+
+### 2. Estado dos providers
+
+- **Vercel (Web):**
+  - Production Deployment confirmado como Ready.
+  - Deploy ativo confirmado no commit `13b2cd9`.
+  - Proxy first-party de auth validado.
+
+- **Render (API):**
+  - API online.
+  - `BETTER_AUTH_URL` corrigido no Render para a URL base da API.
+  - Fluxo email/password validado em producao.
+
 - **Neon (Database):**
-  - Aguardando confirmação de que a `DATABASE_URL` foi inserida no provider da API.
-  - **Importante:** Migrations de produção (`prisma migrate deploy`) ainda não foram executadas.
+  - Nao mexer sem autorizacao explicita.
+  - Nenhuma migration foi executada durante este registro.
+  - Nenhum seed foi executado durante este registro.
 
-### 3. Smoke Test Pendente (NÃO REALIZADO)
-O deploy baseline só poderá ser marcado como DONE após a validação bem-sucedida de:
-- [ ] API `/health` e `/config/status` (URLs reais).
-- [ ] Web `/login` (URL real).
-- [ ] Fluxo completo: Signup -> Login -> Criar Registro Teste -> Validar no Calendário -> Logout.
+### 3. Smoke test autenticado
 
----
+Confirmado manualmente em producao:
 
-## PRÓXIMA TASK RECOMENDADA (READY)
-**Título:** Deploy validation and authenticated smoke test
+- [x] Login por e-mail/senha.
+- [x] Acesso autenticado a `/calendar`.
+- [x] Auth proxy + `BETTER_AUTH_URL` corrigidos.
 
-**Objetivo:**
-Finalizar a configuração dos providers, executar as migrations de produção e validar o funcionamento real da aplicação (fluxo autenticado).
+Fora de escopo neste baseline:
 
-**Escopo:**
-1. Confirmar/Configurar URLs reais:
-   - `CORS_ORIGIN` (na API)
-   - `BETTER_AUTH_URL` (na API)
-   - `NEXT_PUBLIC_API_URL` (na Web)
-2. Executar: `pnpm --filter api exec prisma migrate deploy` no ambiente de produção.
-3. Realizar Smoke Test autenticado.
-4. Documentar o sucesso final em `STATUS.md` e `backlog.md` (arquivos a serem criados no momento correto).
+- Google OAuth.
+- SMTP/e-mail transacional.
+- Alteracoes de Neon.
+- Prisma migrations.
+- Seed de dados.
+
+### 4. Estado operacional final
+
+O baseline de producao esta validado para o fluxo autenticado por e-mail/senha.
+
+O proximo trabalho deve partir deste ponto, sem repetir ajustes de auth ja validados, salvo se um novo erro de producao for observado.
