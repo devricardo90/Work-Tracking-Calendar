@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError } from "./api";
+import { ApiError } from "./api";
 
 type AuthUser = {
   id: string;
@@ -53,8 +53,13 @@ async function parseApiError(response: Response, fallbackMessage: string) {
   throw new ApiError(response.status, message, { code, issues });
 }
 
+const API_AUTH_URL =
+  typeof window !== "undefined"
+    ? "/api/auth"
+    : `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333"}/api/auth`;
+
 async function authGetRequest<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}/api/auth${path}`, {
+  const response = await fetch(`${API_AUTH_URL}${path}`, {
     method: "GET",
     credentials: "include",
     cache: "no-store",
@@ -88,7 +93,7 @@ async function parseAuthSuccessPayload<T>(response: Response): Promise<T> {
 }
 
 async function authPostRequest<T>(path: string, payload?: Record<string, unknown>): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}/api/auth${path}`, {
+  const response = await fetch(`${API_AUTH_URL}${path}`, {
     method: "POST",
     headers: payload
       ? {
@@ -134,5 +139,5 @@ export function getGoogleSignInUrl() {
     process.env.NEXT_PUBLIC_APP_URL ??
     (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
   const callbackURL = encodeURIComponent(`${appUrl}/calendar`);
-  return `${API_BASE_URL}/api/auth/sign-in/social?provider=google&callbackURL=${callbackURL}`;
+  return `${API_AUTH_URL}/sign-in/social?provider=google&callbackURL=${callbackURL}`;
 }
