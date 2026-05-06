@@ -13,20 +13,23 @@ const items = [
 type MobileNavProps = {
   active: "calendar" | "history" | "summary" | "profile";
   addHref?: string;
+  showAddButton?: boolean;
 };
 
-export function MobileNav({ active, addHref = "/entries/new" }: MobileNavProps) {
+export function MobileNav({ active, addHref = "/entries/new", showAddButton = true }: MobileNavProps) {
   return (
     <>
-      <div className="fixed right-5 bottom-24 z-20 sm:right-[calc(50%-11rem)]">
-        <Link
-          href={addHref}
-          className="flex items-center gap-2 rounded-[1.35rem] border border-stone-950/10 bg-stone-900 px-5 py-4 text-sm font-semibold text-stone-50 shadow-[0_22px_46px_-20px_rgba(0,0,0,0.65)] transition hover:scale-[1.02] hover:bg-stone-800"
-        >
-          <Plus className="size-4" />
-          Add Entry
-        </Link>
-      </div>
+      {showAddButton ? (
+        <div className="fixed right-5 bottom-24 z-20 sm:right-[calc(50%-11rem)]">
+          <Link
+            href={addHref}
+            className="flex items-center gap-2 rounded-[1.35rem] border border-stone-950/10 bg-stone-900 px-5 py-4 text-sm font-semibold text-stone-50 shadow-[0_22px_46px_-20px_rgba(0,0,0,0.65)] transition hover:scale-[1.02] hover:bg-stone-800"
+          >
+            <Plus className="size-4" />
+            Add Entry
+          </Link>
+        </div>
+      ) : null}
 
       <nav className="fixed right-0 bottom-0 left-0 z-10 border-t border-stone-200/80 bg-white/88 px-4 pt-3 pb-6 backdrop-blur">
         <div className="mx-auto flex w-full max-w-md items-center justify-between rounded-[1.6rem] border border-stone-200/70 bg-white/88 px-3 py-2 shadow-[0_20px_40px_-28px_rgba(50,35,20,0.32)]">

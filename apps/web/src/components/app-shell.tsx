@@ -16,9 +16,10 @@ type AppShellProps = {
   active: "calendar" | "history" | "summary" | "profile";
   addHref?: string;
   children: ReactNode;
+  showAddButton?: boolean;
 };
 
-export function AppShell({ active, addHref = "/entries/new", children }: AppShellProps) {
+export function AppShell({ active, addHref = "/entries/new", children, showAddButton = true }: AppShellProps) {
   return (
     <main className="min-h-screen overflow-x-hidden bg-[linear-gradient(135deg,#f7f4ed_0%,#f0eadf_48%,#e7dece_100%)] text-stone-900">
       <div className="mx-auto grid min-h-screen w-full max-w-7xl lg:grid-cols-[15rem_1fr]">
@@ -58,13 +59,15 @@ export function AppShell({ active, addHref = "/entries/new", children }: AppShel
             })}
           </nav>
 
-          <Link
-            href={addHref}
-            className="relative z-10 mt-8 flex items-center justify-center gap-2 rounded-2xl border border-stone-950 bg-stone-950 px-4 py-3 text-sm font-semibold text-stone-50 shadow-[0_20px_42px_-26px_rgba(0,0,0,0.66)] transition hover:bg-stone-800"
-          >
-            <Plus className="size-4" />
-            Add Entry
-          </Link>
+          {showAddButton ? (
+            <Link
+              href={addHref}
+              className="relative z-10 mt-8 flex items-center justify-center gap-2 rounded-2xl border border-stone-950 bg-stone-950 px-4 py-3 text-sm font-semibold text-stone-50 shadow-[0_20px_42px_-26px_rgba(0,0,0,0.66)] transition hover:bg-stone-800"
+            >
+              <Plus className="size-4" />
+              Add Entry
+            </Link>
+          ) : null}
 
           <div className="relative z-10 mt-auto">
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-stone-300">Private workspace</p>
@@ -76,7 +79,7 @@ export function AppShell({ active, addHref = "/entries/new", children }: AppShel
         </div>
       </div>
 
-      <MobileNav active={active} addHref={addHref} />
+      <MobileNav active={active} addHref={addHref} showAddButton={showAddButton} />
     </main>
   );
 }
