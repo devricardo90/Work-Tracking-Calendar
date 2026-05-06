@@ -1,53 +1,73 @@
-# Worker Hours Tracker
+# Work-Tracking Calendar
 
-Worker Hours Tracker is a mobile-first personal work log for recording daily work entries, tracking monthly totals, and keeping a searchable history of work locations and notes.
+A focused worklog calendar for tracking worked days, hours, locations, notes, and monthly summaries.
 
-## Problem Statement
+[Live demo](https://work-tracking-calendar-web.vercel.app) | [Repository](https://github.com/devricardo90/Work-Tracking-Calendar)
 
-Independent workers and small operators often track hours across calendars, notes, spreadsheets, and chat messages. This makes it hard to answer simple questions such as:
+![Work-Tracking Calendar dashboard](docs/assets/work-tracking-calendar-hero.png)
 
-- Which days did I work this month?
-- How many hours should be billed?
-- Where did I work on a specific day?
-- Which days were days off or no-work days?
+## Overview
 
-This project centralizes that workflow in a small app designed for daily personal use.
+Work-Tracking Calendar helps workers keep a clear record of daily work activity without spreading the workflow across calendars, notes, and spreadsheets. The app centers the month view, lets users record daily entries, and keeps history, totals, locations, and notes in one private workspace.
 
-## MVP Scope
+The current version is deployed and validated as a portfolio/demo-stage product. It is built for practical worklog tracking, not payroll processing or legal timekeeping compliance.
 
-- Email/password authentication.
-- Private calendar views protected by session checks.
-- Daily work entries with status, hours, location, and notes.
-- Monthly summaries and work history.
-- Saved profile locations.
-- API documentation exposed through Scalar.
-- Local PostgreSQL development with Prisma migrations.
+## Core Features
+
+- Email/password authentication
+- Calendar-based work tracking
+- Add and edit work entries
+- Day details view
+- Worked, Day Off, and No Work statuses
+- Location and notes per entry
+- Monthly summary
+- History and profile pages
+- Responsive app shell with bottom navigation
 
 ## Tech Stack
 
-- Monorepo: `pnpm` workspace
-- Web: Next.js 16, React 19, Tailwind CSS, shadcn/ui, React Hook Form, Zod
-- API: Node.js, Fastify 5, Better Auth, Prisma 7
-- Database: PostgreSQL
-- API docs: Scalar + OpenAPI
-- Deployment target: Vercel for Web, Render or Railway for API, Neon Postgres for Database
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS
+- Better Auth
+- Fastify
+- Prisma 7
+- PostgreSQL
+- pnpm workspace
+- Vercel for the web app
+- Render-compatible API deployment
 
-## Architecture Overview
+## Architecture
 
 ```text
 apps/
-  api/   Fastify API, Better Auth, Prisma, Scalar docs
-  web/   Next.js app router frontend
-docs/    Product notes, manual tests, deployment checklist, execution history
+  web/   Next.js App Router frontend
+  api/   Fastify API, Better Auth, Prisma, and API docs
+docs/    Product notes, deployment notes, and design references
 ```
 
-The Web app talks to the API through `NEXT_PUBLIC_API_URL`. The API stores users, sessions, profiles, saved locations, and work entries in PostgreSQL through Prisma.
+The web app talks to the API through the configured API base URL. The API owns authentication, user sessions, profiles, saved locations, and work entries. PostgreSQL stores the application data through Prisma.
+
+## Current Status
+
+The deployed app has validated flows for authentication, calendar tracking, entry details, add/edit entry, monthly summary, history, and profile pages. Recent validation also confirmed that lint, typecheck, and web build passed during the UI polish sequence.
+
+Validated flows include:
+
+- Login page loads
+- Authenticated calendar loads
+- Entry details page opens
+- Add/edit entry flow works
+- Month navigation works
+- Summary, history, and profile routes load
+- Responsive desktop and mobile layouts remain usable
 
 ## Local Development
 
 ### Requirements
 
-- Node.js 24
+- Node.js
 - pnpm 10
 - Docker Desktop, for local PostgreSQL
 
@@ -66,13 +86,15 @@ Copy-Item apps\web\.env.example apps\web\.env.local
 
 Do not commit real `.env` files or production secrets.
 
-### Start Local Database
+### Start Local PostgreSQL
 
 ```powershell
 docker compose up -d
 ```
 
-### Apply Prisma Migrations Locally
+The included compose file starts PostgreSQL on local port `5499`.
+
+### Prepare Prisma Locally
 
 From `apps/api`:
 
@@ -86,17 +108,10 @@ pnpm exec prisma migrate dev
 From the repository root:
 
 ```powershell
-pnpm --filter api build
-pnpm --filter api start
+pnpm --filter api dev
 ```
 
-Local API URL:
-
-```text
-http://localhost:3333
-```
-
-Health check:
+Local API health check:
 
 ```text
 http://localhost:3333/health
@@ -110,169 +125,31 @@ From the repository root:
 pnpm --filter web dev
 ```
 
-Local Web URL:
+Local web URL:
 
 ```text
 http://localhost:3000
 ```
 
-## Environment Variables
-
-### API
-
-Defined in `apps/api/.env.example`:
-
-```text
-DATABASE_URL
-PORT
-NODE_ENV
-CORS_ORIGIN
-API_DOCS_ENABLED
-JWT_SECRET
-BETTER_AUTH_SECRET
-BETTER_AUTH_URL
-GOOGLE_CLIENT_ID
-GOOGLE_CLIENT_SECRET
-SMTP_HOST
-SMTP_PORT
-SMTP_USER
-SMTP_PASS
-SMTP_FROM
-```
-
-Notes:
-
-- `DATABASE_URL` should point to Neon Postgres in production.
-- `CORS_ORIGIN` should match the deployed Web URL.
-- `BETTER_AUTH_URL` should point to the deployed API auth base URL, ending in `/api/auth`.
-- `JWT_SECRET` and `BETTER_AUTH_SECRET` must be strong production-only secrets.
-- Google and SMTP variables are optional unless those flows are enabled.
-
-The API also supports default profile values through configuration defaults:
-
-```text
-DEFAULT_USER_NAME
-DEFAULT_USER_EMAIL
-DEFAULT_USER_LANGUAGE
-```
-
-### Web
-
-Defined in `apps/web/.env.example`:
-
-```text
-NEXT_PUBLIC_API_URL
-NEXT_PUBLIC_APP_URL
-NEXT_PUBLIC_MAPTILER_KEY
-```
-
-Notes:
-
-- `NEXT_PUBLIC_API_URL` should point to the deployed API URL.
-- `NEXT_PUBLIC_APP_URL` should point to the deployed Web URL.
-- `NEXT_PUBLIC_MAPTILER_KEY` is optional unless map/location features require it in production.
-
-## Database and Prisma Migrations
-
-Production databases should be updated with Prisma migrate deploy:
-
-```powershell
-pnpm --filter api exec prisma migrate deploy
-```
-
-Use this against the production `DATABASE_URL` after the Neon database is created and before running smoke tests. Do not use `prisma migrate dev`, `db push`, or reset commands against production.
-
-## API Documentation
-
-When API docs are enabled:
-
-```text
-/docs/api
-```
-
-Local URL:
-
-```text
-http://localhost:3333/docs/api
-```
-
-## Deployment Plan
-
-Recommended production setup:
-
-- Web: Vercel
-- API: Render or Railway
-- Database: Neon Postgres
-
-### Web Build
-
-Vercel project target:
-
-```text
-apps/web
-```
-
-Build command:
-
-```powershell
-pnpm --filter web build
-```
-
-### API Build and Start
-
-API build command:
-
-```powershell
-pnpm --filter api build
-```
-
-API start command:
-
-```powershell
-pnpm --filter api start
-```
-
-Prisma production migration command:
-
-```powershell
-pnpm --filter api exec prisma migrate deploy
-```
-
-## Mobile Usage Note
-
-The app is designed mobile-first for daily work logging from a phone. It also works on desktop for review, history, and monthly summaries.
-
-## Current Limitations
-
-- Local validation is currently passing for lint, typecheck, Web build, and API build.
-- Google OAuth requires production provider configuration before use.
-- Email report delivery requires SMTP configuration.
-- Screenshots and hosted demo links are not published yet.
-- Production deployment has not been executed yet.
-
-## Roadmap
-
-- Keep lint, typecheck, Web build, and API build green during release preparation.
-- Add production screenshots.
-- Add a live demo URL after deployment.
-- Harden deployment runbooks after the first production release.
-- Expand reporting and export workflows.
-
-## Screenshots
-
-Screenshots will be added after the production deployment is confirmed.
-
-## Demo Credentials
-
-No shared demo credentials are committed to this repository. Use a dedicated test account in the deployed environment if a public demo is needed.
-
 ## Useful Commands
 
 ```powershell
-pnpm --filter api build
-pnpm --filter api start
-pnpm --filter web build
-pnpm --filter web exec tsc --noEmit --pretty false
 pnpm --filter web lint
-pnpm --filter api exec prisma migrate deploy
+pnpm --filter web exec tsc --noEmit --pretty false
+pnpm --filter web build
+pnpm --filter api build
+pnpm --filter api typecheck
+pnpm test
 ```
+
+## Limitations
+
+- Portfolio/demo-stage product
+- Not a payroll system
+- Not a legal timekeeping or compliance tool
+- Google sign-in and email delivery depend on provider configuration
+- Performance polish may continue later
+
+## Author
+
+Ricardo Souza | [devricardo90](https://github.com/devricardo90)
