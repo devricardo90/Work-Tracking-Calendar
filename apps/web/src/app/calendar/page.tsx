@@ -126,32 +126,6 @@ export default function CalendarPage() {
         </div>
         </header>
 
-        <Card className="mb-5 overflow-hidden rounded-[1.6rem] border-stone-200/80 bg-[linear-gradient(135deg,rgba(44,34,24,0.96),rgba(86,63,40,0.88))] text-stone-50 shadow-[0_26px_60px_-36px_rgba(50,35,20,0.52)]">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-stone-300/90">
-                  Operational View
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-                  {format(currentMonth, "MMMM yyyy")}
-                </h2>
-                <p className="mt-2 max-w-[16rem] text-sm leading-6 text-stone-200/90">
-                  Review worked days, fill gaps and keep the month ready for export.
-                </p>
-              </div>
-              <div className="rounded-[1.15rem] border border-white/12 bg-white/10 px-3 py-2 text-right">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-stone-300/90">
-                  Status
-                </p>
-                <p className="mt-1 text-sm font-semibold">
-                  {isLoading ? "Syncing..." : errorMessage ? "Needs attention" : "Up to date"}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
           <Card className="overflow-hidden rounded-[1.5rem] border-stone-200/80 bg-white/92 py-0 shadow-[0_24px_60px_-34px_rgba(50,35,20,0.35)]">
             <CardContent className="p-3 sm:p-4 lg:p-5">
