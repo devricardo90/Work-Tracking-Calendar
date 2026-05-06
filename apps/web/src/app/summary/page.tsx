@@ -6,10 +6,10 @@ import { useEffect, useMemo, useState } from "react";
 import { addMonths, format, startOfMonth, subMonths } from "date-fns";
 import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, LoaderCircle, Mail, FileSpreadsheet } from "lucide-react";
 
+import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { MobileNav } from "@/components/mobile-nav";
 import { ApiError, API_BASE_URL, isAuthenticationError } from "@/lib/api";
 import { getAppConfigStatus } from "@/lib/config-status";
 import { ENTRY_STATUS_LABELS, getEntriesByMonth, toMonthParam, type Entry } from "@/lib/entries";
@@ -201,35 +201,50 @@ export default function SummaryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f6f7f5_0%,#efede8_44%,#e7e2d8_100%)] text-stone-900">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-stone-200/70 bg-white/82 px-4 py-4 backdrop-blur">
-        <Link
-          href={`/calendar?month=${toMonthParam(currentMonth)}`}
-          className="flex size-10 items-center justify-center rounded-full transition hover:bg-stone-100"
-        >
-          <ArrowLeft className="size-5 text-stone-900" />
-        </Link>
-        <div className="flex items-center gap-2">
-          <button
-            className="rounded-full p-2 transition hover:bg-stone-100"
-            onClick={() => navigateToMonth(subMonths(currentMonth, 1))}
-            aria-label="Previous month"
-          >
-            <ChevronLeft className="size-4 text-stone-700" />
-          </button>
-          <h1 className="text-lg font-bold tracking-tight">Monthly Summary</h1>
-          <button
-            className="rounded-full p-2 transition hover:bg-stone-100"
-            onClick={() => navigateToMonth(addMonths(currentMonth, 1))}
-            aria-label="Next month"
-          >
-            <ChevronRight className="size-4 text-stone-700" />
-          </button>
-        </div>
-      </header>
+    <AppShell
+      active="summary"
+      addHref={`/entries/new?date=${toMonthParam(currentMonth)}-01&month=${toMonthParam(currentMonth)}`}
+    >
+      <div className="mx-auto w-full max-w-6xl">
+        <header className="mb-5 flex flex-col gap-4 rounded-[1.75rem] border border-white/80 bg-white/78 px-4 py-4 shadow-[0_24px_70px_-48px_rgba(60,40,20,0.42)] backdrop-blur sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <Link
+              href={`/calendar?month=${toMonthParam(currentMonth)}`}
+              className="mt-1 flex size-10 shrink-0 items-center justify-center rounded-2xl border border-stone-200 bg-white transition hover:bg-stone-50"
+            >
+              <ArrowLeft className="size-5 text-stone-900" />
+            </Link>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-400">Summary</p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-stone-950 sm:text-3xl">Monthly Summary</h1>
+              <p className="mt-1 text-sm text-stone-500">
+                Close out {format(currentMonth, "MMMM yyyy")} with real totals, export and report actions.
+              </p>
+            </div>
+          </div>
 
-      <div className="mx-auto w-full max-w-md px-4 pb-28">
-        <Card className="mt-4 overflow-hidden rounded-[1.6rem] border-stone-200/80 bg-white/92 py-0 shadow-[0_26px_60px_-36px_rgba(50,35,20,0.36)]">
+          <div className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white/86 p-1 shadow-sm lg:min-w-48">
+            <button
+              className="rounded-xl p-2 transition hover:bg-stone-100"
+              onClick={() => navigateToMonth(subMonths(currentMonth, 1))}
+              aria-label="Previous month"
+            >
+              <ChevronLeft className="size-4 text-stone-700" />
+            </button>
+            <span className="px-3 text-sm font-semibold text-stone-700">{format(currentMonth, "MMM yyyy")}</span>
+            <button
+              className="rounded-xl p-2 transition hover:bg-stone-100"
+              onClick={() => navigateToMonth(addMonths(currentMonth, 1))}
+              aria-label="Next month"
+            >
+              <ChevronRight className="size-4 text-stone-700" />
+            </button>
+          </div>
+        </header>
+
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+          <div className="space-y-5">
+            <Card className="overflow-hidden rounded-[1.6rem] border-stone-200/80 bg-white/92 py-0 shadow-[0_26px_60px_-36px_rgba(50,35,20,0.36)]">
           <div className="flex items-center gap-4 bg-stone-900/8 px-6 py-6">
             <div className="flex size-16 items-center justify-center rounded-full bg-stone-900 text-xl font-bold text-stone-50">
               {initials}
@@ -247,7 +262,7 @@ export default function SummaryPage() {
           </div>
         </Card>
 
-        <Card className="mt-4 rounded-[1.5rem] border-stone-200/80 bg-[linear-gradient(135deg,rgba(44,34,24,0.96),rgba(86,63,40,0.88))] text-stone-50 shadow-[0_26px_60px_-36px_rgba(50,35,20,0.52)]">
+        <Card className="rounded-[1.5rem] border-stone-200/80 bg-[linear-gradient(135deg,rgba(44,34,24,0.96),rgba(86,63,40,0.88))] text-stone-50 shadow-[0_26px_60px_-36px_rgba(50,35,20,0.52)]">
           <CardContent className="grid grid-cols-[1fr_auto] items-center gap-4 p-5">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-stone-300/90">
@@ -272,10 +287,10 @@ export default function SummaryPage() {
         {errorMessage ? <p className="mt-4 text-center text-sm text-red-600">{errorMessage}</p> : null}
         {feedbackMessage ? <p className="mt-4 text-center text-sm text-emerald-700">{feedbackMessage}</p> : null}
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           <Card className="rounded-[1.3rem] border-stone-200/80 bg-white/92 shadow-[0_20px_44px_-34px_rgba(50,35,20,0.3)]">
             <CardContent className="p-4">
-              <p className="text-xs font-medium text-stone-400">Total Hours</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-stone-400">Total Hours</p>
               <p className="mt-1 text-3xl font-bold tracking-tight text-stone-950">
                 {isLoading ? "..." : `${totalHours.toFixed(1).replace(".0", "")}h`}
               </p>
@@ -283,7 +298,7 @@ export default function SummaryPage() {
           </Card>
           <Card className="rounded-[1.3rem] border-stone-200/80 bg-white/92 shadow-[0_20px_44px_-34px_rgba(50,35,20,0.3)]">
             <CardContent className="p-4">
-              <p className="text-xs font-medium text-stone-400">Worked Days</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-stone-400">Worked Days</p>
               <p className="mt-1 text-3xl font-bold tracking-tight text-stone-950">
                 {isLoading ? "..." : workedDays}
               </p>
@@ -291,15 +306,15 @@ export default function SummaryPage() {
           </Card>
           <Card className="rounded-[1.3rem] border-stone-200/80 bg-white/92 shadow-[0_20px_44px_-34px_rgba(50,35,20,0.3)]">
             <CardContent className="p-4">
-              <p className="text-xs font-medium text-stone-400">Non-working</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-stone-400">Non-working</p>
               <p className="mt-1 text-3xl font-bold tracking-tight text-stone-950">
                 {isLoading ? "..." : nonWorkingDays}
               </p>
             </CardContent>
           </Card>
-          <Card className="col-span-2 rounded-[1.3rem] border-stone-200/80 bg-white/92 shadow-[0_20px_44px_-34px_rgba(50,35,20,0.3)]">
+          <Card className="col-span-2 rounded-[1.3rem] border-stone-200/80 bg-white/92 shadow-[0_20px_44px_-34px_rgba(50,35,20,0.3)] xl:col-span-1">
             <CardContent className="p-4">
-              <p className="text-xs font-medium text-stone-400">Daily Avg</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-stone-400">Daily Avg</p>
               <p className="mt-1 text-3xl font-bold tracking-tight text-stone-950">
                 {isLoading ? "..." : `${dailyAverage.toFixed(1).replace(".0", "")}h`}
               </p>
@@ -307,7 +322,7 @@ export default function SummaryPage() {
           </Card>
         </div>
 
-        <div className="mt-6 space-y-4">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-stone-950">Daily Entries</h2>
             <Link href={`/history?month=${toMonthParam(currentMonth)}`} className="text-sm font-medium text-stone-700 transition hover:text-stone-950">
@@ -353,8 +368,9 @@ export default function SummaryPage() {
             )}
           </div>
         </div>
+          </div>
 
-        <div className="mt-6 space-y-3">
+        <aside className="space-y-3 lg:sticky lg:top-7">
           <Button asChild className="h-12 w-full rounded-[1.25rem] bg-stone-900 text-sm font-bold text-stone-50 hover:bg-stone-800">
             <Link href={`/reports/preview?month=${toMonthParam(currentMonth)}`}>
               <FileSpreadsheet className="size-4" />
@@ -409,13 +425,9 @@ export default function SummaryPage() {
               </Button>
             </CardContent>
           </Card>
+        </aside>
         </div>
       </div>
-
-      <MobileNav
-        active="summary"
-        addHref={`/entries/new?date=${toMonthParam(currentMonth)}-01&month=${toMonthParam(currentMonth)}`}
-      />
-    </main>
+    </AppShell>
   );
 }

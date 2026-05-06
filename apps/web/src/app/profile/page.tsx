@@ -14,12 +14,12 @@ import {
   X,
 } from "lucide-react";
 
+import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MobileNav } from "@/components/mobile-nav";
 import { isAuthenticationError } from "@/lib/api";
 import {
   getProfile,
@@ -227,21 +227,30 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f6f7f5_0%,#efede8_44%,#e7e2d8_100%)] text-stone-900">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-stone-200/70 bg-white/84 px-6 py-4 backdrop-blur">
-        <Link
-          href="/calendar"
-          className="flex size-10 items-center justify-center rounded-xl transition hover:bg-stone-100"
-        >
-          <ArrowLeft className="size-5 text-stone-700" />
-        </Link>
-        <h1 className="text-xl font-bold tracking-tight">Profile</h1>
-        <div className="size-10" />
-      </header>
+    <AppShell
+      active="profile"
+      addHref={`/entries/new?date=${toDayParam(new Date())}&month=${toMonthParam(new Date())}`}
+    >
+      <form className="mx-auto w-full max-w-6xl" onSubmit={form.handleSubmit(handleSave)}>
+        <header className="mb-5 flex items-start gap-3 rounded-[1.75rem] border border-white/80 bg-white/78 px-4 py-4 shadow-[0_24px_70px_-48px_rgba(60,40,20,0.42)] backdrop-blur sm:px-5">
+          <Link
+            href="/calendar"
+            className="mt-1 flex size-10 shrink-0 items-center justify-center rounded-2xl border border-stone-200 bg-white transition hover:bg-stone-50"
+          >
+            <ArrowLeft className="size-5 text-stone-700" />
+          </Link>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-400">Account settings</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-stone-950 sm:text-3xl">Profile</h1>
+            <p className="mt-1 text-sm text-stone-500">
+              Manage your workspace identity, language and saved work locations.
+            </p>
+          </div>
+        </header>
 
-      <form className="mx-auto w-full max-w-md px-6 pb-28" onSubmit={form.handleSubmit(handleSave)}>
-        <section className="pt-6">
-          <Card className="rounded-[1.6rem] border-stone-200/80 bg-stone-50/80 shadow-[0_22px_50px_-36px_rgba(50,35,20,0.32)]">
+        <div className="grid gap-5 lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start">
+          <aside className="space-y-4 lg:sticky lg:top-7">
+          <Card className="rounded-[1.6rem] border-stone-200/80 bg-white/92 shadow-[0_22px_50px_-36px_rgba(50,35,20,0.32)]">
             <CardContent className="flex min-h-52 flex-col items-center justify-center p-6">
               {isLoading ? (
                 <LoaderCircle className="size-6 animate-spin text-stone-500" />
@@ -271,11 +280,36 @@ export default function ProfilePage() {
               )}
             </CardContent>
           </Card>
-        </section>
 
-        <section className="mt-6 space-y-4">
+          {savedLocations.length ? (
+            <Card className="rounded-[1.5rem] border-stone-200/80 bg-white/92 shadow-[0_20px_44px_-34px_rgba(50,35,20,0.3)]">
+              <CardContent className="p-5">
+                <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-400">
+                  Saved Locations
+                </h3>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {savedLocations.map((location) => (
+                    <span
+                      key={location}
+                      className="rounded-full border border-stone-200 bg-white px-3 py-2 text-xs font-medium text-stone-700"
+                    >
+                      {location}
+                    </span>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+          </aside>
+
+        <section className="space-y-4 rounded-[1.6rem] border border-stone-200/80 bg-white/90 p-4 shadow-[0_22px_50px_-36px_rgba(50,35,20,0.32)] sm:p-5">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-400">Profile details</p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight text-stone-950">Personal information</h2>
+          </div>
+
           <div className="space-y-2">
-            <Label htmlFor="profile-name" className="px-1 text-sm font-semibold text-stone-700">
+            <Label htmlFor="profile-name" className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-400">
               Name
             </Label>
             <Input
@@ -290,7 +324,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="profile-email" className="px-1 text-sm font-semibold text-stone-700">
+            <Label htmlFor="profile-email" className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-400">
               Email
             </Label>
             <Input
@@ -302,7 +336,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-2">
-            <Label className="px-1 text-sm font-semibold text-stone-700">Language</Label>
+            <Label className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-400">Language</Label>
             <Controller
               control={form.control}
               name="language"
@@ -325,7 +359,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="saved-location" className="px-1 text-sm font-semibold text-stone-700">
+            <Label htmlFor="saved-location" className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-400">
               Saved Locations
             </Label>
             <p className="px-1 text-sm text-stone-500">
@@ -375,27 +409,8 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
-        </section>
 
-        {savedLocations.length ? (
-          <section className="mt-6">
-            <h3 className="mb-3 px-2 text-sm font-semibold uppercase tracking-[0.2em] text-stone-400">
-              Saved Locations
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {savedLocations.map((location) => (
-                <span
-                  key={location}
-                  className="rounded-full border border-stone-200 bg-white/92 px-3 py-2 text-xs font-medium text-stone-700"
-                >
-                  {location}
-                </span>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        <section className="mt-8">
+          <div className="border-t border-stone-100 pt-4">
           {isDirty ? (
             <p className="mb-3 px-1 text-sm text-stone-500">You have unsaved profile changes.</p>
           ) : null}
@@ -418,13 +433,10 @@ export default function ProfilePage() {
             {isSigningOut ? <LoaderCircle className="size-4 animate-spin" /> : null}
             {isSigningOut ? "Signing Out..." : "Sign Out"}
           </Button>
+          </div>
         </section>
+        </div>
       </form>
-
-      <MobileNav
-        active="profile"
-        addHref={`/entries/new?date=${toDayParam(new Date())}&month=${toMonthParam(new Date())}`}
-      />
-    </main>
+    </AppShell>
   );
 }

@@ -6,8 +6,8 @@ import { addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameDay,
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { MobileNav } from "@/components/mobile-nav";
 import { isAuthenticationError } from "@/lib/api";
 import { ENTRY_STATUS_LABELS, getEntriesByMonth, toDayParam, toMonthParam, type Entry } from "@/lib/entries";
 
@@ -91,28 +91,41 @@ export default function CalendarPage() {
   const daysWorked = entries.filter((entry) => entry.entryStatus === "worked").length;
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8f8f5_0%,#f1eee9_44%,#e9e4db_100%)] text-stone-900">
-      <header className="sticky top-0 z-10 border-b border-stone-200/70 bg-white/82 px-4 py-4 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-md items-center justify-between">
+    <AppShell
+      active="calendar"
+      addHref={`/entries/new?date=${toDayParam(new Date())}&month=${toMonthParam(currentMonth)}`}
+    >
+      <div className="mx-auto w-full max-w-6xl">
+        <header className="mb-5 flex flex-col gap-4 rounded-[1.75rem] border border-white/80 bg-white/78 px-4 py-4 shadow-[0_24px_70px_-48px_rgba(60,40,20,0.42)] backdrop-blur sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-400">Calendar</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-stone-950 sm:text-3xl">
+              {format(currentMonth, "MMMM yyyy")}
+            </h1>
+            <p className="mt-1 text-sm text-stone-500">
+              Review worked days, fill gaps and keep the month ready for export.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white/86 p-1 shadow-sm lg:min-w-48">
           <button
-            className="rounded-full p-2 transition hover:bg-stone-100"
+            className="rounded-xl p-2 transition hover:bg-stone-100"
             aria-label="Previous month"
             onClick={() => navigateToMonth(subMonths(currentMonth, 1))}
           >
             <ChevronLeft className="size-5 text-stone-600" />
           </button>
-          <h1 className="text-lg font-semibold tracking-tight">{format(currentMonth, "MMMM yyyy")}</h1>
+          <span className="px-3 text-sm font-semibold text-stone-700">{format(currentMonth, "MMM yyyy")}</span>
           <button
-            className="rounded-full p-2 transition hover:bg-stone-100"
+            className="rounded-xl p-2 transition hover:bg-stone-100"
             aria-label="Next month"
             onClick={() => navigateToMonth(addMonths(currentMonth, 1))}
           >
             <ChevronRight className="size-5 text-stone-600" />
           </button>
         </div>
-      </header>
+        </header>
 
-      <div className="mx-auto w-full max-w-md px-4 py-4">
         <Card className="mb-5 overflow-hidden rounded-[1.6rem] border-stone-200/80 bg-[linear-gradient(135deg,rgba(44,34,24,0.96),rgba(86,63,40,0.88))] text-stone-50 shadow-[0_26px_60px_-36px_rgba(50,35,20,0.52)]">
           <CardContent className="p-5">
             <div className="flex items-start justify-between gap-4">
@@ -139,140 +152,139 @@ export default function CalendarPage() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden rounded-[1.5rem] border-stone-200/80 bg-white/90 py-0 shadow-[0_24px_60px_-34px_rgba(50,35,20,0.35)]">
-          <CardContent className="p-4">
-            <div className="mb-2 grid grid-cols-7">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                <div
-                  key={day}
-                  className="py-2 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-stone-400"
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7 gap-px overflow-hidden rounded-2xl border border-stone-100 bg-stone-100">
-              {calendarDays.map((day) => {
-                const dayKey = toDayParam(day);
-                const entry = entriesByDate.get(dayKey);
-                const isCurrentMonth = isSameMonth(day, currentMonth);
-                const isToday = isSameDay(day, new Date());
-
-                return (
-                  <Link
-                    key={dayKey}
-                    href={
-                      entry
-                        ? `/entries/day-details?date=${dayKey}&month=${toMonthParam(currentMonth)}`
-                        : `/entries/new?date=${dayKey}&month=${toMonthParam(currentMonth)}`
-                    }
-                    className={`relative h-16 bg-white p-1 text-left sm:h-20 ${
-                      isCurrentMonth ? "" : "bg-stone-50/80"
-                    } ${isToday ? "ring-2 ring-inset ring-stone-900" : ""}`}
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+          <Card className="overflow-hidden rounded-[1.5rem] border-stone-200/80 bg-white/92 py-0 shadow-[0_24px_60px_-34px_rgba(50,35,20,0.35)]">
+            <CardContent className="p-3 sm:p-4 lg:p-5">
+              <div className="mb-2 grid grid-cols-7">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                  <div
+                    key={day}
+                    className="py-2 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-stone-400"
                   >
-                    <span
-                      className={`text-sm ${
-                        isToday
-                          ? "font-bold text-stone-950"
-                          : isCurrentMonth
-                            ? "font-medium text-stone-800"
-                            : "text-stone-400"
-                      }`}
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-px overflow-hidden rounded-2xl border border-stone-100 bg-stone-100">
+                {calendarDays.map((day) => {
+                  const dayKey = toDayParam(day);
+                  const entry = entriesByDate.get(dayKey);
+                  const isCurrentMonth = isSameMonth(day, currentMonth);
+                  const isToday = isSameDay(day, new Date());
+
+                  return (
+                    <Link
+                      key={dayKey}
+                      href={
+                        entry
+                          ? `/entries/day-details?date=${dayKey}&month=${toMonthParam(currentMonth)}`
+                          : `/entries/new?date=${dayKey}&month=${toMonthParam(currentMonth)}`
+                      }
+                      className={`relative h-16 bg-white p-1.5 text-left transition hover:bg-stone-50 sm:h-20 lg:h-28 ${
+                        isCurrentMonth ? "" : "bg-stone-50/80"
+                      } ${isToday ? "ring-2 ring-inset ring-stone-900" : ""}`}
                     >
-                      {format(day, "d")}
+                      <span
+                        className={`text-sm ${
+                          isToday
+                            ? "font-bold text-stone-950"
+                            : isCurrentMonth
+                              ? "font-medium text-stone-800"
+                              : "text-stone-400"
+                        }`}
+                      >
+                        {format(day, "d")}
+                      </span>
+                      {entry ? (
+                        <>
+                          <span
+                            className={`absolute top-1.5 right-1.5 rounded px-1 text-[10px] font-bold ${
+                              entry.entryStatus === "worked"
+                                ? "bg-stone-900/8 text-stone-900"
+                                : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {entry.entryStatus === "worked" ? `${entry.hoursWorked}h` : ENTRY_STATUS_LABELS[entry.entryStatus]}
+                          </span>
+                          <span
+                            className={`absolute bottom-2 left-1/2 size-1.5 -translate-x-1/2 rounded-full ${
+                              entry.entryStatus === "worked" ? "bg-stone-900" : "bg-amber-500"
+                            }`}
+                          />
+                        </>
+                      ) : null}
+                    </Link>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <aside className="space-y-4">
+            {errorMessage ? (
+              <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{errorMessage}</p>
+            ) : null}
+
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+              <Card className="rounded-[1.5rem] border-stone-200/80 bg-white/92 shadow-[0_20px_50px_-36px_rgba(50,35,20,0.32)]">
+                <CardContent className="p-5">
+                  <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-stone-400">
+                    Total Hours
+                  </p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold tracking-tight text-stone-950">
+                      {isLoading ? "..." : totalHours.toFixed(1).replace(".0", "")}
                     </span>
-                    {entry ? (
-                      <>
-                        <span
-                          className={`absolute top-1 right-1 rounded px-1 text-[10px] font-bold ${
-                            entry.entryStatus === "worked"
-                              ? "bg-stone-900/8 text-stone-900"
-                              : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
-                          {entry.entryStatus === "worked" ? `${entry.hoursWorked}h` : ENTRY_STATUS_LABELS[entry.entryStatus]}
-                        </span>
-                        <span
-                          className={`absolute bottom-2 left-1/2 size-1.5 -translate-x-1/2 rounded-full ${
-                            entry.entryStatus === "worked" ? "bg-stone-900" : "bg-amber-500"
-                          }`}
-                        />
-                      </>
-                    ) : null}
+                    <span className="text-sm text-stone-500">hrs</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-[1.5rem] border-stone-200/80 bg-white/92 shadow-[0_20px_50px_-36px_rgba(50,35,20,0.32)]">
+                <CardContent className="p-5">
+                  <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-stone-400">
+                    Days Worked
+                  </p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold tracking-tight text-stone-950">
+                      {isLoading ? "..." : daysWorked}
+                    </span>
+                    <span className="text-sm text-stone-500">days</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="rounded-[1.5rem] border-stone-200/80 bg-white/92 shadow-[0_20px_50px_-36px_rgba(50,35,20,0.32)]">
+              <CardContent className="space-y-4 p-5">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-stone-400">
+                    Quick Actions
+                  </p>
+                  <h2 className="mt-1 text-lg font-semibold tracking-tight text-stone-950">
+                    Keep the month updated
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  <Link
+                    href={`/entries/new?date=${toDayParam(new Date())}&month=${toMonthParam(currentMonth)}`}
+                    className="rounded-[1.15rem] border border-stone-950 bg-stone-950 px-4 py-3 text-sm font-medium text-stone-50 transition hover:bg-stone-800"
+                  >
+                    Add or update today&apos;s entry
                   </Link>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {errorMessage ? (
-          <p className="mt-3 text-center text-sm text-red-600">{errorMessage}</p>
-        ) : null}
-
-        <div className="mt-5 grid grid-cols-2 gap-4">
-          <Card className="rounded-[1.5rem] border-stone-200/80 bg-white/90 shadow-[0_20px_50px_-36px_rgba(50,35,20,0.32)]">
-            <CardContent className="p-5">
-              <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-stone-400">
-                Total Hours
-              </p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold tracking-tight text-stone-950">
-                  {isLoading ? "..." : totalHours.toFixed(1).replace(".0", "")}
-                </span>
-                <span className="text-sm text-stone-500">hrs</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-[1.5rem] border-stone-200/80 bg-white/90 shadow-[0_20px_50px_-36px_rgba(50,35,20,0.32)]">
-            <CardContent className="p-5">
-              <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-stone-400">
-                Days Worked
-              </p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold tracking-tight text-stone-950">
-                  {isLoading ? "..." : daysWorked}
-                </span>
-                <span className="text-sm text-stone-500">days</span>
-              </div>
-            </CardContent>
-          </Card>
+                  <Link
+                    href={`/summary?month=${toMonthParam(currentMonth)}`}
+                    className="rounded-[1.15rem] border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+                  >
+                    Review monthly summary
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </aside>
         </div>
-
-        <Card className="mt-5 rounded-[1.5rem] border-stone-200/80 bg-white/90 shadow-[0_20px_50px_-36px_rgba(50,35,20,0.32)]">
-          <CardContent className="space-y-4 p-5">
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-stone-400">
-                Quick Actions
-              </p>
-              <h2 className="mt-1 text-lg font-semibold tracking-tight text-stone-950">
-                Keep the month updated
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 gap-3">
-              <Link
-                href={`/entries/new?date=${toDayParam(new Date())}&month=${toMonthParam(currentMonth)}`}
-                className="rounded-[1.15rem] border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-medium text-stone-800 transition hover:bg-stone-100"
-              >
-                Add or update today&apos;s entry
-              </Link>
-              <Link
-                href={`/summary?month=${toMonthParam(currentMonth)}`}
-                className="rounded-[1.15rem] border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
-              >
-                Review monthly summary
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
       </div>
-
-      <MobileNav
-        active="calendar"
-        addHref={`/entries/new?date=${toDayParam(new Date())}&month=${toMonthParam(currentMonth)}`}
-      />
-    </main>
+    </AppShell>
   );
 }
